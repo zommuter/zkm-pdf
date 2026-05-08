@@ -1,0 +1,29 @@
+name: zkm-pdf
+version: 0.1.0
+description: >
+  Import text-extractable PDF files into the knowledge store.
+  Emits one markdown file per PDF when extracted text meets the minimum
+  character threshold. Silently skips scanned-only PDFs (no text layer)
+  so that zkm-scan can process them later.
+
+creates_dirs:
+  - pdfs
+  - originals/pdfs
+  - inbox/pdfs
+
+config:
+  PDF_SOURCE_DIR:
+    required: false
+    default: ""
+    description: >
+      Optional directory to scan recursively for PDF files (.pdf). Read-only.
+      When empty, only PDFs already in the store inbox (deposited by zkm-eml
+      or other plugins) are processed.
+  PDF_MIN_TEXT_CHARS:
+    required: false
+    default: "100"
+    description: >
+      Minimum number of extracted characters required to emit an md file.
+      PDFs below this threshold are silently skipped and logged to
+      <store>/.zkm-state/zkm-pdf-skipped.jsonl for later review.
+      NOTE: this char-count heuristic is provisional; revisit before Session 13.
