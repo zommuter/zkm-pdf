@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zkm-pdf"
-version = "0.1.0"
+version = "0.1.1"
 description = "zkm plugin: import text-extractable PDFs into the knowledge store"
 requires-python = ">=3.14"
 dependencies = [
     "pypdf>=4.0",
     "python-frontmatter>=1.1",
-    "zkm>=0.2.0,<0.3.0",
+    "zkm>=0.3.0,<0.4.0",
 ]
 
 [project.optional-dependencies]
