@@ -1,4 +1,4 @@
-name: zkm-pdf
+name: pdf
 version: 0.1.0
 description: >
   Import text-extractable PDF files into the knowledge store.
