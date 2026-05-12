@@ -1,6 +1,6 @@
 # zkm-pdf
 
-zkm plugin that imports text-extractable PDF files into the knowledge store.
+[zkm](https://github.com/zommuter/zkm) plugin that imports text-extractable PDF files into the knowledge store.
 
 ## What it does
 
@@ -13,8 +13,10 @@ zkm plugin that imports text-extractable PDF files into the knowledge store.
 
 ## Install
 
+Clone this repo inside your zkm `plugins/` directory:
+
 ```bash
-zkm plugin add ~/src/zkm-pdf
+git clone https://github.com/zommuter/zkm-pdf.git plugins/zkm-pdf
 ```
 
 ## Configuration (in `<store>/.env`)
@@ -36,7 +38,12 @@ inbox/pdfs/<name>.pdf                 # for PDF_SOURCE_DIR imports only
 ## Development
 
 ```bash
+cd plugins/zkm-pdf
 uv sync --extra dev
 uv run python tests/build_fixtures.py  # regenerate fixtures after changing build_fixtures.py
 uv run pytest
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE)
