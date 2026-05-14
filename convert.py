@@ -40,8 +40,8 @@ def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
     Returns a list of paths to newly created .md files.
     progress: optional callback(current, total, message).
     """
-    min_chars = int(config.get("PDF_MIN_TEXT_CHARS", 100))
-    src_dir_raw = config.get("PDF_SOURCE_DIR", "")
+    min_chars = int(config.get("min_text_chars", 100))
+    src_dir_raw = str(config.get("source_dir", "") or "")
 
     (store_path / "pdfs").mkdir(parents=True, exist_ok=True)
     (store_path / "originals" / "pdfs").mkdir(parents=True, exist_ok=True)
@@ -75,7 +75,7 @@ def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
     if src_dir_raw:
         src = Path(src_dir_raw).expanduser().resolve()
         if not src.exists():
-            raise FileNotFoundError(f"PDF_SOURCE_DIR does not exist: {src}")
+            raise FileNotFoundError(f"source_dir does not exist: {src}")
         src_candidates = sorted(f for f in src.rglob("*.pdf") if f.is_file())
         canonical_index = build_canonical_index(store_path, "inbox/pdfs")
         inbox_pdfs_dir = store_path / "inbox" / "pdfs"

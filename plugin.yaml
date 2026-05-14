@@ -12,16 +12,16 @@ creates_dirs:
   - inbox/pdfs
 
 config:
-  PDF_SOURCE_DIR:
+  source_dir:
     required: false
     default: ""
     description: >
       Optional directory to scan recursively for PDF files (.pdf). Read-only.
       When empty, only PDFs already in the store inbox (deposited by zkm-eml
       or other plugins) are processed.
-  PDF_MIN_TEXT_CHARS:
+  min_text_chars:
     required: false
-    default: "100"
+    default: 100
     description: >
       Minimum number of extracted characters required to emit an md file.
       PDFs below this threshold are silently skipped and logged to
