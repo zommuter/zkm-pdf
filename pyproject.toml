@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zkm-pdf"
-version = "0.3.0"
+version = "0.4.0"
 description = "zkm plugin: import text-extractable PDFs into the knowledge store"
 license = "MIT"
 requires-python = ">=3.11"
@@ -35,6 +35,9 @@ dependencies = [
 Homepage = "https://github.com/zommuter/zkm"
 Repository = "https://github.com/zommuter/zkm-pdf"
 Issues = "https://github.com/zommuter/zkm-pdf/issues"
+
+[project.entry-points."zkm.plugins"]
+pdf = "zkm_pdf"
 
 [project.optional-dependencies]
 dev = [
