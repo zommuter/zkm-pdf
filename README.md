@@ -19,12 +19,12 @@ Clone this repo inside your zkm `plugins/` directory:
 git clone https://github.com/zommuter/zkm-pdf.git plugins/zkm-pdf
 ```
 
-## Configuration (in `<store>/.env`)
+## Configuration (in `<store>/zkm-config.yaml`, plugin section `pdf`)
 
-| Variable | Default | Description |
+| Key | Default | Description |
 |---|---|---|
-| `PDF_SOURCE_DIR` | *(empty)* | Optional external directory to scan recursively for `.pdf` files |
-| `PDF_MIN_TEXT_CHARS` | `100` | Min extracted chars to emit md. Below this → silently skip (provisional heuristic) |
+| `source_dir` | *(empty)* | Optional external directory to scan recursively for `.pdf` files |
+| `min_text_chars` | `100` | Min extracted chars to emit md. Below this → silently skip (provisional heuristic) |
 
 ## Output
 

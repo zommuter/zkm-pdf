@@ -10,7 +10,7 @@ from pathlib import Path
 import frontmatter
 import pytest
 
-from convert import PLUGIN_NAME, PLUGIN_VERSION, convert
+from zkm_pdf.convert import PLUGIN_NAME, PLUGIN_VERSION, convert
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TEXT_ONLY = FIXTURES / "text_only.pdf"
@@ -38,9 +38,16 @@ def src(tmp_path: Path) -> Path:
 
 def cfg(src_dir: Path | None = None, min_chars: int = 100) -> dict:
     return {
-        "PDF_SOURCE_DIR": str(src_dir) if src_dir else "",
-        "PDF_MIN_TEXT_CHARS": str(min_chars),
+        "source_dir": str(src_dir) if src_dir else "",
+        "min_text_chars": min_chars,
     }
+
+
+def test_root_shim_reexports_convert():
+    """Core's filesystem discovery loads the root convert.py shim (SB2)."""
+    import convert as shim
+
+    assert shim.convert is convert
 
 
 # ── 1. Happy path ─────────────────────────────────────────────────────────────
@@ -97,8 +104,11 @@ def test_convert_dedup_by_sha256(store, src):
     created = convert(store, cfg(src))
     assert len(created) == 1
     cas_files = list((store / "originals" / "pdfs" / "_objects").rglob("*"))
-    # Count only CAS objects (not .json sidecars) — one per unique sha256
-    assert sum(1 for f in cas_files if f.is_file() and f.suffix != ".json") == 1
+    # Count only CAS objects (not .json sidecars, not fcntl .lock siblings) —
+    # one per unique sha256
+    assert sum(
+        1 for f in cas_files if f.is_file() and f.suffix not in (".json", ".lock")
+    ) == 1
 
 
 # ── 4. mtime fallback when /CreationDate is absent ───────────────────────────
