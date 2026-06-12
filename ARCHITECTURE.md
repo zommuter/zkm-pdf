@@ -1,0 +1,125 @@
+# zkm-pdf architecture
+
+Design decisions with rationale and rejected alternatives. Code lives in
+`src/zkm_pdf/convert.py`; this file explains *why* it looks the way it does.
+
+## Position in the zkm pipeline
+
+```
+zkm-eml ──deposits .pdf attachments──▶ inbox/ ──▶ zkm-pdf ──▶ pdfs/YYYY/MM/*.md ──▶ index
+                         (CAS symlinks)               │
+external source_dir ──────────────────────────────────┘
+                                                       └─ no text layer? → skip,
+                                                          log, leave for zkm-scan
+```
+
+zkm-pdf is a **source plugin** (writes md bodies), not an amender. It is also a
+**downstream consumer**: its primary input is CAS objects another plugin
+(zkm-eml) already wrote.
+
+## Two input paths (decided at v0.4.0)
+
+1. **Inbox path (primary)** — walk `<store>/inbox/**/*.pdf` symlinks, resolve to
+   the CAS object, **reuse it** (no byte copy), merge a `pdf` producer into the
+   *existing* CAS sidecar. Frontmatter `original:` points at the upstream CAS
+   path (e.g. `originals/mail/_objects/...`).
+2. **`source_dir` path (optional)** — walk an external directory, write a *new*
+   CAS object under `originals/pdfs/`, create the canonical `inbox/pdfs/`
+   symlink via `zkm.inbox.symlink_with_sidecar`.
+
+**Rationale**: most PDFs arrive as mail attachments; duplicating their bytes
+into a second CAS tree would break the one-object-per-sha256 invariant and
+double storage. The external path exists for scanner-dump / Downloads-folder
+imports that have no upstream plugin.
+
+**Rejected**: a single unified path that always copies into `originals/pdfs/` —
+violates CAS dedup and would orphan the eml producer chain.
+
+## Ownership: the upstream allowlist
+
+`docs/plugin-spec.md` requires plugins to be a **no-op on inbox items they do
+not own**. A pure reading of "own" (only items whose sidecar lists *this*
+plugin) would make the primary path impossible — eml-deposited PDFs list `eml`,
+not `pdf`. zkm-pdf therefore interprets ownership via an explicit allowlist:
+
+```python
+_KNOWN_UPSTREAM_PLUGINS = {"eml", "pdf"}
+```
+
+An inbox PDF is processed only if its **CAS-object sidecar** (`<obj>.json`, not
+the inbox `.origin.json`) lists a known upstream producer. Foreign deposits
+(e.g. a future plugin's PDFs) are untouched and `convert()` returns `[]`.
+
+**Rejected**: processing every inbox `*.pdf` regardless of producer — would
+silently consume other plugins' staging artifacts and violate the spec contract.
+**Rejected**: per-store config for the allowlist — no second upstream exists
+yet; add config only when one appears (observe-before-preventing).
+
+## Dedup and idempotency
+
+The dedup key is the **SHA-256 of the PDF bytes**. Existing shas are discovered
+by scanning `pdfs/**/*.md` frontmatter at the start of each run — the markdown
+tree is the single source of truth; there is no separate state DB.
+
+**Rejected**: a sha→md state file under `.zkm-state/` — would drift from the
+store after manual `git rm` / `zkm rm` and contradicts core's "md is source of
+truth" rule. The O(n) frontmatter scan is cheap at current store sizes.
+
+Consequence (known wart): PDFs that were *skipped* (below threshold) never gain
+an md, so they are re-extracted — and re-logged — on every run. Fixing the
+re-log noise is ROADMAP id:2abf; the re-extraction cost is accepted until the
+per-CAS-object extraction cache lands (core `docs/object-storage.md`, Phase 3+).
+
+## The min-text heuristic (PROVISIONAL)
+
+`min_text_chars` (default 100) decides "born-digital text PDF" vs
+"scanned-only → leave for zkm-scan". It was an explicit judgment call marked
+*revisit before Session 13* and is the weakest part of the design:
+
+- The current count includes the `<!-- page N -->` marker overhead added by
+  `_extract_text`, so a many-page sparse PDF can pass on marker bytes alone
+  (ROADMAP id:1055 pins the text-only counting semantics).
+- The 100-char default is uncalibrated against a real corpus; replacing or
+  calibrating the heuristic (chars-per-page density, text-coverage ratio, ...)
+  is ROADMAP id:9475 [HARD].
+
+Skips are silent on stdout but always appended to
+`<store>/.zkm-state/zkm-pdf-skipped.jsonl` (path, sha256, text_chars,
+threshold, mtime) so the boundary is auditable and zkm-scan can later consume
+the queue.
+
+## Date and path scheme
+
+`pdfs/YYYY/MM/<date>_<slug>.md`, slug from the source filename, `_N` suffix on
+collisions. The date is resolved as:
+
+1. PDF `/CreationDate` metadata (pypdf `creation_date`), ISO-8601-ified;
+2. fallback: file mtime.
+
+**Known limitation**: for the inbox path the "file" is the CAS object, whose
+mtime is the *deposit* time, not the document time — acceptable because mail
+attachments almost always carry `/CreationDate`, and the eml md already anchors
+the mail date. Revisit only if real corpora show frequent metadata-less inbox
+PDFs.
+
+## Error philosophy (current state + direction)
+
+`_get_pdf_meta` / `_extract_text` catch broadly and degrade to empty results,
+so corrupt or encrypted PDFs currently fall through as "0 extracted chars" and
+get logged as ordinary below-threshold skips — misleading, since zkm-scan can't
+OCR an encrypted file either. ROADMAP ids:58d7 (encrypted: empty-password
+decrypt or reasoned skip) and af0b (corrupt: reasoned skip, batch continues)
+split these cases out via a `reason` field in the skip log (id:2abf). A
+conversion batch must never abort on one bad file.
+
+## Packaging (SB5, 2026-06)
+
+Importable package `src/zkm_pdf/` with a `zkm.plugins` entry point (wheel
+install path) **plus** a root `convert.py` shim + root `plugin.yaml`
+(filesystem-discovery path for the dev-checkout workflow). Core's SB2 loader
+injects `src/` onto `sys.path` before importing the shim. The duplication
+(two `plugin.yaml`s, shim re-exports) is the price of supporting both install
+origins; keep the copies byte-identical.
+
+**Rejected**: dropping the root shim and requiring editable installs for dev —
+core's filesystem discovery contract predates SB5 and other plugins rely on it.
