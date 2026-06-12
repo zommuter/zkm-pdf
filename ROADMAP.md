@@ -28,8 +28,11 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     an EMPTY user password (owner-password-only protection, common for
     print/copy-restricted invoices) is transparently decrypted and imported
     normally. No password configuration is added.
-  - **Tests**: `tests/test_roadmap_specs.py::test_encrypted_pdf_skipped_with_reason`,
-    `::test_encrypted_empty_user_password_is_processed` (each `# roadmap:58d7`) (currently RED)
+  - **Tests**: `tests/test_roadmap_specs.py::test_encrypted_pdf_skipped_with_reason`
+    (`# roadmap:58d7`) (currently RED);
+    `::test_encrypted_empty_user_password_is_processed` is a PINNING guard
+    (green today — pypdf already transparently decrypts empty-user-password
+    PDFs; it must STAY green, i.e. don't over-skip on a naive `is_encrypted`)
   - **Done-check**: `uv run pytest tests/test_roadmap_specs.py -k encrypted`
   - **Context**: `src/zkm_pdf/convert.py::_extract_text` / `_get_pdf_meta`
     currently swallow the pypdf decrypt error into "0 chars" → misleading

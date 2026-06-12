@@ -25,6 +25,8 @@ def build_all() -> None:
     _build_sparse_text(FPDF)
     _build_image_only(FPDF)
     _build_nodate(FPDF)
+    _build_multipage_sparse(FPDF)
+    _build_meta_rich(FPDF)
     print(f"Built fixtures in {FIXTURES}")
 
 
@@ -86,6 +88,33 @@ def _build_nodate(FPDF) -> None:
     buf = io.BytesIO()
     writer.write(buf)
     (FIXTURES / "nodate.pdf").write_bytes(buf.getvalue())
+
+
+def _build_multipage_sparse(FPDF) -> None:
+    """3 pages x ~30 chars each: total page TEXT < 100 chars, but the marker-joined
+    body produced by _extract_text exceeds 100 — pins roadmap:1055 (threshold must
+    count text chars only, not <!-- page N --> overhead)."""
+    pdf = FPDF()
+    pdf.set_creation_date(datetime(2024, 3, 3, 9, 0, 0))
+    for _ in range(3):
+        pdf.add_page()
+        pdf.set_font("Helvetica", size=12)
+        pdf.cell(0, 10, "Sparse page text, thirty char.")  # 30 chars
+    pdf.output(str(FIXTURES / "multipage_sparse.pdf"))
+
+
+def _build_meta_rich(FPDF) -> None:
+    """Text PDF with /Subject and /Keywords metadata — for roadmap:03c2."""
+    pdf = FPDF()
+    pdf.set_title("Meta Rich Title")
+    pdf.set_author("Meta Author")
+    pdf.set_subject("Quarterly placeholder report")
+    pdf.set_keywords("Alpha, beta; GAMMA, alpha")
+    pdf.set_creation_date(datetime(2024, 9, 1, 8, 0, 0))
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
+    pdf.multi_cell(0, 10, "Placeholder body text for metadata extraction tests. " * 4)
+    pdf.output(str(FIXTURES / "meta_rich.pdf"))
 
 
 if __name__ == "__main__":
