@@ -22,3 +22,7 @@ feat(convert): encrypted/error skip reasons, keyword→tags, text-char threshold
 ## 2026-06-13 15:07 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: 497e531 audited clean (docs-only, 20 tests green); pruned 3 REVIEW_ME boxes, minted id:1a30 decryption-queue [HARD], refreshed ARCHITECTURE/CLAUDE pointer v1→v2/TODO count
+
+## 2026-06-13 23:49 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: 1 commit (daf49df REVIEW_ME triage) audited clean, 20 tests green, roadmap:1055 box confirmed+pruned, no gaming; routine_open=0
