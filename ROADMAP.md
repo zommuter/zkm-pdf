@@ -85,6 +85,33 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     keywords→tags mapping is a judgment call — see REVIEW_ME.md. Fixture
     `tests/fixtures/meta_rich.pdf` (regen via `tests/build_fixtures.py`).
 
+- [ ] Decryption queue for non-empty-password PDFs + .eml password source [HARD — strong model] <!-- id:1a30 -->
+  - **Why HARD**: changes the encrypted-PDF outcome from terminal skip to a
+    self-draining queue, and wires a NEW cross-source link (the originating
+    `.eml` as a password source) — touches the import-ordering contract, the
+    skip-log semantics (new `reason: "encrypted-pending"`), and the inbox/CAS
+    attach path that already binds PDFs to their `.eml`. Mis-handling risks
+    storing plaintext passwords or importing a doc twice (once pending, once
+    decrypted). Owner directive: keep it lightweight until the email-password
+    link proves its worth — NO config surface, NO key store yet.
+  - **Acceptance**: a PDF with a non-empty user password is logged with
+    `reason: "encrypted-pending"` (not terminal `"encrypted"`) and leaves no
+    md/CAS/inbox artifacts on the pending pass; when a password becomes known
+    the entry is re-attempted and imported normally, and the pending entry no
+    longer re-logs (dedup key from id:2abf still holds). The originating `.eml`
+    (already linked in the inbox-PDF→eml-CAS attach path) is scanned for a
+    plaintext password and tried automatically so the queue self-drains. Empty
+    user password behaviour (id:58d7) is unchanged. No password config/key store.
+  - **Tests**: new RED specs in `tests/test_roadmap_specs.py` (`# roadmap:1a30`)
+    covering: encrypted-pending logging, no-artifact-on-pending, eml-derived
+    password self-drain, and idempotent re-run.
+  - **Context**: extends the id:58d7 short-circuit in
+    `src/zkm_pdf/convert.py::_extract_text`/`_get_pdf_meta`; reuse the inbox
+    PDF→eml CAS linkage (see `tests/test_convert.py::test_convert_inbox_pdf_attaches_to_existing_eml_cas`)
+    for the password-source. Originated as an owner decision on the id:58d7
+    REVIEW_ME box (2026-06-13). Low expected volume — favour the simplest queue
+    that works (a `reason` value + re-scan on next run), defer any store.
+
 - [ ] Calibrate or replace the min-text "scanned-only" heuristic [HARD — strong model] <!-- id:9475 -->
   - **Why HARD**: the 100-char default was an explicit provisional judgment
     ("revisit before Session 13") with no corpus evidence. Choosing the

@@ -104,13 +104,22 @@ PDFs.
 
 ## Error philosophy (current state + direction)
 
-`_get_pdf_meta` / `_extract_text` catch broadly and degrade to empty results,
-so corrupt or encrypted PDFs currently fall through as "0 extracted chars" and
-get logged as ordinary below-threshold skips — misleading, since zkm-scan can't
-OCR an encrypted file either. ROADMAP ids:58d7 (encrypted: empty-password
-decrypt or reasoned skip) and af0b (corrupt: reasoned skip, batch continues)
-split these cases out via a `reason` field in the skip log (id:2abf). A
-conversion batch must never abort on one bad file.
+Skip entries carry an explicit `reason` (id:2abf): `_extract_text` distinguishes
+parse failures (`reason: "error"`, id:af0b — a bad file never aborts the batch;
+siblings still import) from PDFs requiring a non-empty user password
+(`reason: "encrypted"`, id:58d7 — short-circuited before any store write).
+Empty-user-password PDFs (owner-only/copy-restricted) are transparently
+decrypted via `decrypt("")` and imported normally. A genuinely text-light PDF
+stays `reason: "below_threshold"`. The skip log dedups on
+`(sha256, reason, threshold)` so unchanged files don't re-log but threshold
+experiments remain auditable. A conversion batch never aborts on one bad file.
+
+Direction (id:1a30, owner decision 2026-06-13): non-empty-password PDFs should
+move from terminal `"encrypted"` to a self-draining decryption queue
+(`reason: "encrypted-pending"`) that re-imports once a password is known —
+sourced from the originating `.eml` (passwords often arrive in plaintext in the
+same mail). Kept lightweight (no config surface, no key store) until that link
+proves its worth.
 
 ## Packaging (SB5, 2026-06)
 
