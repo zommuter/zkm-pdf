@@ -18,3 +18,7 @@ Handoff: first CLAUDE.md + ARCHITECTURE.md; README de-staled (pre-M2 .env table)
 ## 2026-06-13 10:29 — executor (sonnet, manual relay integration)
 
 feat(convert): encrypted/error skip reasons, keyword→tags, text-char threshold (executor 0954, manual integration)
+
+## 2026-06-13 15:07 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: 497e531 audited clean (docs-only, 20 tests green); pruned 3 REVIEW_ME boxes, minted id:1a30 decryption-queue [HARD], refreshed ARCHITECTURE/CLAUDE pointer v1→v2/TODO count
