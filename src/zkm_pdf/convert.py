@@ -8,6 +8,7 @@ Two input paths:
 
 Silently skips PDFs with < PDF_MIN_TEXT_CHARS extracted text (intended for
 zkm-scan). Logs skipped items to <store>/.zkm-state/zkm-pdf-skipped.jsonl.
+Skip reasons: "below_threshold", "encrypted", "error".
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -32,6 +34,15 @@ PLUGIN_NAME = "pdf"
 PLUGIN_VERSION = "0.4.0"
 
 _KNOWN_UPSTREAM_PLUGINS = {"eml", PLUGIN_NAME}
+
+
+@dataclass
+class _ExtractResult:
+    """Result of PDF text extraction."""
+    body: str          # marker-joined body for the .md file
+    text_chars: int    # sum of per-page text lengths (markers excluded)
+    encrypted: bool = False   # True when decrypt("") fails
+    error: bool = False       # True when PDF cannot be parsed at all
 
 
 def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
@@ -87,9 +98,16 @@ def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
             if sha in existing_shas:
                 continue
             # Extract text before touching the store so skips leave no traces.
-            text = _extract_text(pdf_file)
-            if len(text) < min_chars:
-                _log_skipped(store_path, pdf_file, sha, len(text), min_chars)
+            result = _extract_text(pdf_file)
+            if result.error:
+                _log_skipped(store_path, pdf_file, sha, 0, min_chars, reason="error")
+                continue
+            if result.encrypted:
+                _log_skipped(store_path, pdf_file, sha, 0, min_chars, reason="encrypted")
+                continue
+            if result.text_chars < min_chars:
+                _log_skipped(store_path, pdf_file, sha, result.text_chars, min_chars,
+                             reason="below_threshold")
                 continue
             cas_path = write_object(store_path, "originals/pdfs", pdf_file)
             cas_sidecar = cas_path.with_name(cas_path.name + ".json")
@@ -107,7 +125,7 @@ def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
                 cas_path=cas_path,
                 cas_sidecar=cas_sidecar,
                 min_chars=min_chars,
-                preextracted_text=text,
+                preextracted=result,
             )
             if md:
                 created.append(md)
@@ -126,13 +144,20 @@ def _emit_md(
     cas_path: Path,
     cas_sidecar: Path,
     min_chars: int,
-    preextracted_text: str | None = None,
+    preextracted: _ExtractResult | None = None,
 ) -> Path | None:
     """Extract text, write md, update CAS sidecar. Returns md path or None on skip."""
-    text = preextracted_text if preextracted_text is not None else _extract_text(pdf_path)
+    result = preextracted if preextracted is not None else _extract_text(pdf_path)
 
-    if len(text) < min_chars:
-        _log_skipped(store_path, pdf_path, sha, len(text), min_chars)
+    if result.error:
+        _log_skipped(store_path, pdf_path, sha, 0, min_chars, reason="error")
+        return None
+    if result.encrypted:
+        _log_skipped(store_path, pdf_path, sha, 0, min_chars, reason="encrypted")
+        return None
+    if result.text_chars < min_chars:
+        _log_skipped(store_path, pdf_path, sha, result.text_chars, min_chars,
+                     reason="below_threshold")
         return None
 
     meta = _get_pdf_meta(pdf_path)
@@ -156,15 +181,22 @@ def _emit_md(
         "sha256": sha,
         "original": original_rel,
         "pages": meta.get("pages", 0),
-        "text_chars": len(text),
+        "text_chars": result.text_chars,
     }
     if meta.get("title"):
         fm["title"] = meta["title"]
     if meta.get("author"):
         fm["author"] = meta["author"]
+    if meta.get("subject"):
+        fm["subject"] = meta["subject"]
+    if meta.get("keywords"):
+        # Merge keywords into tags: split on , and ;, strip, lowercase, dedup order-preserving
+        raw_kw = re.split(r"[,;]", meta["keywords"])
+        kw_list = list(dict.fromkeys(k.strip().lower() for k in raw_kw if k.strip()))
+        fm["tags"] = kw_list
 
     rel_link = os.path.relpath(cas_path, out.parent)
-    body = f"[original PDF]({rel_link})\n\n{text}\n"
+    body = f"[original PDF]({rel_link})\n\n{result.body}\n"
     write_atomic(out, frontmatter.dumps(frontmatter.Post(body, **fm)))
 
     merge_producer(
@@ -220,7 +252,7 @@ def _is_owned(cas_sidecar: Path) -> bool:
 # ── PDF metadata / extraction ─────────────────────────────────────────────────
 
 def _get_pdf_meta(path: Path) -> dict:
-    """Return dict with: title, author, pages, creation_date (all optional)."""
+    """Return dict with: title, author, subject, keywords, pages, creation_date (all optional)."""
     result: dict = {}
     try:
         reader = PdfReader(str(path))
@@ -233,23 +265,42 @@ def _get_pdf_meta(path: Path) -> dict:
                 result["author"] = str(meta.author).strip()
             if meta.creation_date:
                 result["creation_date"] = meta.creation_date
+            subject = getattr(meta, "subject", None)
+            if subject:
+                result["subject"] = str(subject).strip()
+            keywords = getattr(meta, "keywords", None)
+            if keywords:
+                result["keywords"] = str(keywords).strip()
     except (PdfReadError, Exception):  # noqa: BLE001
         pass
     return result
 
 
-def _extract_text(path: Path) -> str:
-    """Extract all text from PDF, pages separated by <!-- page N --> markers."""
+def _extract_text(path: Path) -> _ExtractResult:
+    """Extract all text from PDF, pages separated by <!-- page N --> markers.
+
+    Returns an _ExtractResult with:
+    - body: marker-joined content for the .md file
+    - text_chars: sum of per-page extracted text lengths (markers excluded)
+    - encrypted: True when the PDF requires a non-empty password
+    - error: True when the PDF cannot be parsed at all
+    """
     try:
         reader = PdfReader(str(path))
+        if reader.is_encrypted:
+            # Try empty user password (transparent for owner-only restrictions)
+            if not reader.decrypt(""):
+                return _ExtractResult(body="", text_chars=0, encrypted=True)
         parts = []
+        text_chars = 0
         for i, page in enumerate(reader.pages, 1):
             text = (page.extract_text() or "").strip()
             if text:
+                text_chars += len(text)
                 parts.append(f"<!-- page {i} -->\n\n{text}")
-        return "\n\n".join(parts)
+        return _ExtractResult(body="\n\n".join(parts), text_chars=text_chars)
     except (PdfReadError, Exception):  # noqa: BLE001
-        return ""
+        return _ExtractResult(body="", text_chars=0, error=True)
 
 
 def _pdf_date_to_iso(dt: object) -> str | None:
@@ -267,18 +318,52 @@ def _pdf_date_to_iso(dt: object) -> str | None:
 
 
 def _log_skipped(
-    store_path: Path, pdf_path: Path, sha: str, text_chars: int, threshold: int
+    store_path: Path,
+    pdf_path: Path,
+    sha: str,
+    text_chars: int,
+    threshold: int,
+    *,
+    reason: str,
 ) -> None:
+    """Append a skip entry to the JSONL log, deduplicating on (sha256, reason, threshold).
+
+    Existing entries without a 'reason' field are treated as unknown and do not
+    block new entries from being written — this avoids crashing on legacy logs.
+    """
     state_dir = store_path / ".zkm-state"
     state_dir.mkdir(exist_ok=True)
+    log_path = state_dir / "zkm-pdf-skipped.jsonl"
+
+    # Read existing entries to dedup; skip malformed lines gracefully.
+    existing_keys: set[tuple[str, str, int]] = set()
+    if log_path.exists():
+        for line in log_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                existing_keys.add((
+                    obj.get("sha256", ""),
+                    obj.get("reason", ""),
+                    int(obj.get("threshold", 0)),
+                ))
+            except (json.JSONDecodeError, ValueError):
+                continue
+
+    key = (sha, reason, threshold)
+    if key in existing_keys:
+        return  # already logged with this (sha256, reason, threshold)
+
     entry = json.dumps({
         "path": str(pdf_path),
         "sha256": sha,
+        "reason": reason,
         "text_chars": text_chars,
         "threshold": threshold,
         "mtime": pdf_path.stat().st_mtime,
     })
-    log_path = state_dir / "zkm-pdf-skipped.jsonl"
     with log_path.open("a", encoding="utf-8") as fh:
         fh.write(entry + "\n")
 

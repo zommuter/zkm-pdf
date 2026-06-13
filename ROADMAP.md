@@ -6,7 +6,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
 
 ## Items
 
-- [ ] Add `reason` field to the skip log and stop duplicate lines across runs [ROUTINE] <!-- id:2abf -->
+- [x] Add `reason` field to the skip log and stop duplicate lines across runs [ROUTINE] <!-- id:2abf -->
   - **Acceptance**: every entry in `<store>/.zkm-state/zkm-pdf-skipped.jsonl`
     carries a `reason` key (`"below_threshold"` for the existing min-chars skip;
     ids 58d7/af0b add `"encrypted"` / `"error"`). Re-running `convert()` over a
@@ -21,7 +21,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     ARCHITECTURE.md § Dedup and idempotency — the re-extraction cost stays,
     only the log noise goes. Keep JSONL (one object per line).
 
-- [ ] Handle encrypted PDFs: empty-password decrypt, else reasoned skip [ROUTINE] <!-- id:58d7 -->
+- [x] Handle encrypted PDFs: empty-password decrypt, else reasoned skip [ROUTINE] <!-- id:58d7 -->
   - **Acceptance**: a PDF encrypted with a non-empty user password is skipped
     gracefully — no md, no CAS object, no inbox symlink, one skip-log entry with
     `reason: "encrypted"`; the run continues and exits 0. A PDF encrypted with
@@ -41,7 +41,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     extract-before-write ordering in the source_dir path). Depends on the
     `reason` field from id:2abf — land that first or in the same session.
 
-- [ ] Handle corrupt/malformed PDFs: reasoned skip, batch continues [ROUTINE] <!-- id:af0b -->
+- [x] Handle corrupt/malformed PDFs: reasoned skip, batch continues [ROUTINE] <!-- id:af0b -->
   - **Acceptance**: a file that pypdf cannot parse at all (garbage bytes,
     truncated xref) produces one skip-log entry with `reason: "error"`, leaves
     no store artifacts, and does NOT abort the batch — sibling valid PDFs in the
@@ -54,7 +54,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     (`reason: "error"`) from "parsed, no text" (`reason: "below_threshold"`).
     Depends on the `reason` field from id:2abf.
 
-- [ ] Count only extracted text chars against the threshold, not page markers [ROUTINE] <!-- id:1055 -->
+- [x] Count only extracted text chars against the threshold, not page markers [ROUTINE] <!-- id:1055 -->
   - **Acceptance**: the `min_text_chars` comparison uses the sum of per-page
     extracted text lengths only — the `<!-- page N -->` markers and join
     separators that `_extract_text` adds to the md body are excluded. A
@@ -70,7 +70,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     Interpretation pinned in REVIEW_ME.md. Fixture
     `tests/fixtures/multipage_sparse.pdf` (regen via `tests/build_fixtures.py`).
 
-- [ ] Extract PDF subject and keywords metadata into frontmatter [ROUTINE] <!-- id:03c2 -->
+- [x] Extract PDF subject and keywords metadata into frontmatter [ROUTINE] <!-- id:03c2 -->
   - **Acceptance**: when the PDF `/Info` dict carries `/Subject`, frontmatter
     gains `subject: <stripped string>`; when it carries `/Keywords`, the
     keywords are split on `,` and `;`, stripped, lowercased, deduped
