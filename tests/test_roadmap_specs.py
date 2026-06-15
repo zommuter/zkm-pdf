@@ -105,10 +105,12 @@ def test_encrypted_pdf_skipped_with_reason(store, src):  # roadmap:58d7
     objects = store / "originals" / "pdfs" / "_objects"
     assert not objects.exists() or not any(f.is_file() for f in objects.rglob("*"))
     assert not any((store / "inbox" / "pdfs").iterdir())
-    # Exactly one reasoned skip-log entry
+    # Exactly one reasoned skip-log entry. id:1a30 superseded the terminal
+    # "encrypted" reason with the self-draining-queue value "encrypted-pending"
+    # (no md/CAS/inbox artifacts is unchanged — this is still a graceful skip).
     entries = read_skip_log(store)
     assert len(entries) == 1
-    assert entries[0]["reason"] == "encrypted"
+    assert entries[0]["reason"] == "encrypted-pending"
     assert len(entries[0]["sha256"]) == 64
 
 

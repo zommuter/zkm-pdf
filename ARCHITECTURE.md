@@ -107,19 +107,34 @@ PDFs.
 Skip entries carry an explicit `reason` (id:2abf): `_extract_text` distinguishes
 parse failures (`reason: "error"`, id:af0b — a bad file never aborts the batch;
 siblings still import) from PDFs requiring a non-empty user password
-(`reason: "encrypted"`, id:58d7 — short-circuited before any store write).
-Empty-user-password PDFs (owner-only/copy-restricted) are transparently
-decrypted via `decrypt("")` and imported normally. A genuinely text-light PDF
-stays `reason: "below_threshold"`. The skip log dedups on
+(`reason: "encrypted-pending"`, id:58d7/id:1a30 — short-circuited before any
+store write). Empty-user-password PDFs (owner-only/copy-restricted) are
+transparently decrypted via `decrypt("")` and imported normally. A genuinely
+text-light PDF stays `reason: "below_threshold"`. The skip log dedups on
 `(sha256, reason, threshold)` so unchanged files don't re-log but threshold
 experiments remain auditable. A conversion batch never aborts on one bad file.
 
-Direction (id:1a30, owner decision 2026-06-13): non-empty-password PDFs should
-move from terminal `"encrypted"` to a self-draining decryption queue
-(`reason: "encrypted-pending"`) that re-imports once a password is known —
-sourced from the originating `.eml` (passwords often arrive in plaintext in the
-same mail). Kept lightweight (no config surface, no key store) until that link
-proves its worth.
+### Self-draining decryption queue (id:1a30, owner decision 2026-06-13)
+
+Non-empty-password PDFs are **not** terminally skipped: they are queued with
+`reason: "encrypted-pending"`. On the inbox path (zkm-eml deposits), the
+originating `.eml` message — located via the CAS sidecar's `eml` producer
+`message` field (a store-relative path to the eml `.md`) — is scanned for a
+plaintext password (`_recover_passwords_from_eml` → `_scan_passwords`). Any
+labelled candidate ("password:/Passwort:/PIN/code is X") is tried as a decrypt
+key, so the queue **self-drains on the next run** once the mail carrying the
+password is imported. `_extract_text` always tries the empty password first
+(keeps id:58d7 transparent), then the recovered candidates. The dedup key from
+id:2abf keeps an unrecoverable pending entry from re-logging across runs.
+
+Kept deliberately lightweight: **no config surface, no key store** — the only
+state is the `encrypted-pending` log line, and the password regex is
+conservative (labelled tokens only; a false negative just leaves the item
+pending, never mis-imports). Source-dir PDFs have no eml link, so they queue as
+pending but cannot self-drain until a future password source is wired in.
+**Rejected** (per owner directive): a persistent password/key store, a config
+key for user-supplied passwords, and unlabelled-token guessing — all deferred
+until the email-password link proves its worth.
 
 ## Packaging (SB5, 2026-06)
 
