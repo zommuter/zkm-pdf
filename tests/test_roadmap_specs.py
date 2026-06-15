@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -104,10 +105,12 @@ def test_encrypted_pdf_skipped_with_reason(store, src):  # roadmap:58d7
     objects = store / "originals" / "pdfs" / "_objects"
     assert not objects.exists() or not any(f.is_file() for f in objects.rglob("*"))
     assert not any((store / "inbox" / "pdfs").iterdir())
-    # Exactly one reasoned skip-log entry
+    # Exactly one reasoned skip-log entry. id:1a30 superseded the terminal
+    # "encrypted" reason with the self-draining-queue value "encrypted-pending"
+    # (no md/CAS/inbox artifacts is unchanged — this is still a graceful skip).
     entries = read_skip_log(store)
     assert len(entries) == 1
-    assert entries[0]["reason"] == "encrypted"
+    assert entries[0]["reason"] == "encrypted-pending"
     assert len(entries[0]["sha256"]) == 64
 
 
@@ -172,3 +175,118 @@ def test_subject_and_keywords_into_frontmatter(store, src):  # roadmap:03c2
     assert post.metadata["title"] == "Meta Rich Title"
     assert post.metadata["author"] == "Meta Author"
     assert post.metadata["date"].startswith("2024-09-01")
+
+
+# ── id:1a30 — decryption queue + .eml password source ────────────────────────
+#
+# Owner decision (2026-06-13, ARCHITECTURE.md § Error philosophy): non-empty-
+# password PDFs move from terminal reason "encrypted" to a self-draining queue
+# (reason "encrypted-pending"). When the originating .eml carries the password
+# in plaintext, the next run finds it, decrypts, and imports normally. No
+# config surface, no key store. Empty-user-password behaviour (id:58d7) is
+# unchanged.
+
+def _deposit_inbox_pdf_from_eml(
+    store: Path, pdf_bytes: bytes, *, eml_message: str, eml_body: str
+) -> None:
+    """Simulate zkm-eml: write PDF to mail CAS, attach an `eml` producer whose
+    `message` points at an eml .md file (which we also write with `eml_body`),
+    and create the flat inbox symlink. Mirrors
+    test_convert.py::test_convert_inbox_pdf_attaches_to_existing_eml_cas.
+    """
+    from zkm.cas import write_object
+    from zkm.sidecar import merge_producer
+
+    cas_obj = write_object(store, "originals/mail", pdf_bytes)
+    pdf_sha = cas_obj.parts[-2] + cas_obj.parts[-1]
+    cas_sidecar = cas_obj.with_name(cas_obj.name + ".json")
+    merge_producer(
+        cas_sidecar,
+        sha256=pdf_sha,
+        producer={"plugin": "eml", "message": eml_message, "sha256": "e" * 64},
+    )
+    # The eml message file lives at <store>/<eml_message> and carries the body.
+    eml_path = store / eml_message
+    eml_path.parent.mkdir(parents=True, exist_ok=True)
+    eml_path.write_text(eml_body, encoding="utf-8")
+
+    inbox = store / "inbox"
+    inbox.mkdir(exist_ok=True)
+    rel_target = Path(os.path.relpath(cas_obj, inbox))
+    (inbox / "locked.pdf").symlink_to(rel_target)
+
+
+def _encrypted_pdf_bytes(*, user_password: str) -> bytes:
+    from pypdf import PdfWriter
+
+    writer = PdfWriter(clone_from=str(TEXT_ONLY))
+    writer.encrypt(user_password=user_password)
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
+
+
+def test_encrypted_pending_logged_no_artifacts(store, src):  # roadmap:1a30
+    """A non-empty-password PDF with no recoverable password is logged
+    `encrypted-pending` (not terminal `encrypted`) and leaves no store
+    artifacts on the pending pass."""
+    write_encrypted_pdf(src / "locked.pdf", user_password="secret")
+    created = convert(store, cfg(src))
+    assert created == []
+    assert not list((store / "pdfs").rglob("*.md"))
+    objects = store / "originals" / "pdfs" / "_objects"
+    assert not objects.exists() or not any(f.is_file() for f in objects.rglob("*"))
+    entries = read_skip_log(store)
+    assert len(entries) == 1
+    assert entries[0]["reason"] == "encrypted-pending"
+
+
+def test_encrypted_pending_idempotent_no_relog(store, src):  # roadmap:1a30
+    """An unrecoverable encrypted-pending PDF re-attempted on a later run does
+    not re-log (dedup key from id:2abf still holds)."""
+    write_encrypted_pdf(src / "locked.pdf", user_password="secret")
+    convert(store, cfg(src))
+    convert(store, cfg(src))
+    entries = read_skip_log(store)
+    assert len(entries) == 1, f"pending entry re-logged: {entries}"
+    assert entries[0]["reason"] == "encrypted-pending"
+
+
+def test_eml_password_self_drains_pending_queue(store):  # roadmap:1a30
+    """An inbox PDF encrypted with a non-empty user password whose originating
+    .eml carries that password in plaintext is decrypted and imported."""
+    pdf_bytes = _encrypted_pdf_bytes(user_password="hunter2")
+    _deposit_inbox_pdf_from_eml(
+        store,
+        pdf_bytes,
+        eml_message="mail/messages/2024-01-01_invoice.md",
+        eml_body="Hello,\n\nPlease find the invoice attached.\n"
+        "The PDF password is: hunter2\n\nRegards",
+    )
+    created = convert(store, cfg())
+    assert len(created) == 1, "eml-sourced password did not drain the queue"
+    post = frontmatter.load(created[0])
+    assert "extractable text" in post.content
+    # The pending entry is the only skip-log line, and it must not block import.
+    # (A self-drained item may keep its earlier pending log line — what matters
+    # is the import happened and no NEW reason was logged for this run.)
+    reasons = {e["reason"] for e in read_skip_log(store)}
+    assert reasons <= {"encrypted-pending"}
+
+
+def test_eml_without_password_stays_pending(store):  # roadmap:1a30
+    """An inbox encrypted PDF whose .eml has no recoverable password stays
+    pending (no import, one encrypted-pending entry)."""
+    pdf_bytes = _encrypted_pdf_bytes(user_password="hunter2")
+    _deposit_inbox_pdf_from_eml(
+        store,
+        pdf_bytes,
+        eml_message="mail/messages/2024-01-01_invoice.md",
+        eml_body="Hello,\n\nPlease find the invoice attached.\n\nRegards",
+    )
+    created = convert(store, cfg())
+    assert created == []
+    assert not list((store / "pdfs").rglob("*.md"))
+    entries = read_skip_log(store)
+    assert len(entries) == 1
+    assert entries[0]["reason"] == "encrypted-pending"

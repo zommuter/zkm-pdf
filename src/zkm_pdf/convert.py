@@ -8,7 +8,15 @@ Two input paths:
 
 Silently skips PDFs with < PDF_MIN_TEXT_CHARS extracted text (intended for
 zkm-scan). Logs skipped items to <store>/.zkm-state/zkm-pdf-skipped.jsonl.
-Skip reasons: "below_threshold", "encrypted", "error".
+Skip reasons: "below_threshold", "encrypted-pending", "error".
+
+Non-empty-password PDFs are not terminally skipped: they are queued with
+reason "encrypted-pending" (id:1a30). When the PDF arrived via the inbox
+(deposited by zkm-eml), the originating .eml message is scanned for a
+plaintext password and tried automatically, so the queue self-drains on the
+next run once the password is known. No password config surface, no key store
+(owner directive, 2026-06-13). Source-dir PDFs have no eml link, so they stay
+pending until a future password source is wired in.
 """
 
 from __future__ import annotations
@@ -41,7 +49,7 @@ class _ExtractResult:
     """Result of PDF text extraction."""
     body: str          # marker-joined body for the .md file
     text_chars: int    # sum of per-page text lengths (markers excluded)
-    encrypted: bool = False   # True when decrypt("") fails
+    encrypted: bool = False   # True when no candidate password decrypted it
     error: bool = False       # True when PDF cannot be parsed at all
 
 
@@ -103,7 +111,10 @@ def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
                 _log_skipped(store_path, pdf_file, sha, 0, min_chars, reason="error")
                 continue
             if result.encrypted:
-                _log_skipped(store_path, pdf_file, sha, 0, min_chars, reason="encrypted")
+                # No eml link on the source-dir path → no password source yet;
+                # queue as pending rather than terminally skipping (id:1a30).
+                _log_skipped(store_path, pdf_file, sha, 0, min_chars,
+                             reason="encrypted-pending")
                 continue
             if result.text_chars < min_chars:
                 _log_skipped(store_path, pdf_file, sha, result.text_chars, min_chars,
@@ -147,13 +158,19 @@ def _emit_md(
     preextracted: _ExtractResult | None = None,
 ) -> Path | None:
     """Extract text, write md, update CAS sidecar. Returns md path or None on skip."""
-    result = preextracted if preextracted is not None else _extract_text(pdf_path)
+    if preextracted is not None:
+        result = preextracted
+    else:
+        # Inbox path: recover candidate passwords from the originating .eml so a
+        # non-empty-password PDF self-drains once the password is known (id:1a30).
+        passwords = _recover_passwords_from_eml(store_path, cas_sidecar)
+        result = _extract_text(pdf_path, passwords)
 
     if result.error:
         _log_skipped(store_path, pdf_path, sha, 0, min_chars, reason="error")
         return None
     if result.encrypted:
-        _log_skipped(store_path, pdf_path, sha, 0, min_chars, reason="encrypted")
+        _log_skipped(store_path, pdf_path, sha, 0, min_chars, reason="encrypted-pending")
         return None
     if result.text_chars < min_chars:
         _log_skipped(store_path, pdf_path, sha, result.text_chars, min_chars,
@@ -249,6 +266,67 @@ def _is_owned(cas_sidecar: Path) -> bool:
     return any(p.get("plugin") in _KNOWN_UPSTREAM_PLUGINS for p in data.get("producers", []))
 
 
+# ── Password recovery from the originating .eml (id:1a30) ─────────────────────
+
+# Conservative labelled-password patterns. A PDF password in mail is almost
+# always introduced by an explicit label ("password: X", "Passwort: X", "PIN",
+# "code"); we deliberately do NOT guess unlabelled tokens — a false positive
+# would either fail to decrypt (harmless) or, worse, never (the queue just
+# stays pending). The chosen token is the first non-space run after the label,
+# trimmed of surrounding quotes/brackets and trailing sentence punctuation.
+# This heuristic is a judgment call — see REVIEW_ME.md.
+_PASSWORD_LABEL_RE = re.compile(
+    r"(?:pdf[\s-]*)?(?:password|passwort|kennwort|pin|code|passcode)"
+    r"\s*(?:is|ist|lautet|:|=|->|→)+\s*",
+    re.IGNORECASE,
+)
+_PASSWORD_TOKEN_RE = re.compile(r"[^\s'\"`\[\]()<>]+")
+
+
+def _scan_passwords(text: str) -> list[str]:
+    """Return candidate passwords found after a password label, order-preserving
+    and deduped. Empty list if none found."""
+    found: list[str] = []
+    for m in _PASSWORD_LABEL_RE.finditer(text):
+        tail = text[m.end():]
+        tok = _PASSWORD_TOKEN_RE.match(tail)
+        if not tok:
+            continue
+        candidate = tok.group(0).rstrip(".,;:!?")
+        if candidate:
+            found.append(candidate)
+    return list(dict.fromkeys(found))
+
+
+def _recover_passwords_from_eml(store_path: Path, cas_sidecar: Path) -> list[str]:
+    """Scan the originating .eml message (linked via the CAS sidecar's `eml`
+    producer) for plaintext PDF passwords. Returns [] if there is no eml link,
+    the message file is missing, or no labelled password is present.
+
+    The `message` field of an `eml` producer is a store-relative path to the
+    eml's markdown file (see zkm-eml's inbox deposit contract); we read that
+    file's text and scan it. Anything unreadable degrades to no candidates —
+    the PDF simply stays `encrypted-pending`.
+    """
+    data = read_sidecar(cas_sidecar)
+    if not data:
+        return []
+    candidates: list[str] = []
+    for producer in data.get("producers", []):
+        if producer.get("plugin") != "eml":
+            continue
+        message = producer.get("message")
+        if not message:
+            continue
+        eml_path = store_path / message
+        try:
+            text = eml_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        candidates.extend(_scan_passwords(text))
+    return list(dict.fromkeys(candidates))
+
+
 # ── PDF metadata / extraction ─────────────────────────────────────────────────
 
 def _get_pdf_meta(path: Path) -> dict:
@@ -276,20 +354,27 @@ def _get_pdf_meta(path: Path) -> dict:
     return result
 
 
-def _extract_text(path: Path) -> _ExtractResult:
+def _extract_text(path: Path, passwords: list[str] | None = None) -> _ExtractResult:
     """Extract all text from PDF, pages separated by <!-- page N --> markers.
 
     Returns an _ExtractResult with:
     - body: marker-joined content for the .md file
     - text_chars: sum of per-page extracted text lengths (markers excluded)
-    - encrypted: True when the PDF requires a non-empty password
+    - encrypted: True when the PDF requires a password none of `passwords` (nor
+      the empty password) unlocks
     - error: True when the PDF cannot be parsed at all
+
+    `passwords` is an ordered list of candidate passwords recovered from an
+    external source (e.g. the originating .eml, id:1a30); the empty password is
+    always tried first so owner-only-restricted PDFs (id:58d7) stay transparent.
     """
     try:
         reader = PdfReader(str(path))
         if reader.is_encrypted:
-            # Try empty user password (transparent for owner-only restrictions)
-            if not reader.decrypt(""):
+            # Empty user password first (transparent for owner-only restrictions),
+            # then any recovered candidate passwords (id:1a30 self-draining queue).
+            candidates = [""] + list(passwords or [])
+            if not any(reader.decrypt(pw) for pw in candidates):
                 return _ExtractResult(body="", text_chars=0, encrypted=True)
         parts = []
         text_chars = 0

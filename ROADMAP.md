@@ -85,7 +85,20 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     keywords→tags mapping is a judgment call — see REVIEW_ME.md. Fixture
     `tests/fixtures/meta_rich.pdf` (regen via `tests/build_fixtures.py`).
 
-- [ ] Decryption queue for non-empty-password PDFs + .eml password source [HARD — strong model] <!-- id:1a30 -->
+- [x] Decryption queue for non-empty-password PDFs + .eml password source [HARD — strong model] <!-- id:1a30 -->
+  - **Done** (relay HARD, 2026-06-15): non-empty-password PDFs now log
+    `reason: "encrypted-pending"` (was terminal `"encrypted"`) with no
+    md/CAS/inbox artifacts; on the inbox path the originating `.eml` (CAS
+    sidecar `eml` producer `message`) is scanned for a labelled plaintext
+    password and tried as a decrypt key, so the queue self-drains next run.
+    Empty-user-password (id:58d7) unchanged; dedup (id:2abf) keeps pending
+    entries from re-logging. No config, no key store (owner directive).
+    Tests: `tests/test_roadmap_specs.py` `test_encrypted_pending_logged_no_artifacts`,
+    `test_encrypted_pending_idempotent_no_relog`,
+    `test_eml_password_self_drains_pending_queue`,
+    `test_eml_without_password_stays_pending` (all green). Password-regex
+    interpretation pinned in REVIEW_ME.md. Impl: `convert.py`
+    `_recover_passwords_from_eml`/`_scan_passwords` + `_extract_text(passwords=)`.
   - **Why HARD**: changes the encrypted-PDF outcome from terminal skip to a
     self-draining queue, and wires a NEW cross-source link (the originating
     `.eml` as a password source) — touches the import-ordering contract, the
