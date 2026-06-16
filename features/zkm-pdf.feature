@@ -39,3 +39,26 @@ Feature: Import text PDFs into the knowledge store
     Given a previous "zkm convert pdf" run imported all PDFs
     When I run "zkm convert pdf" again
     Then it reports zero new files and creates no new git commit
+
+  @manual
+  Scenario: Empty-user-password PDF is decrypted transparently (id:58d7)
+    Given the source folder contains a copy-restricted PDF protected with an empty user password
+    When I run "zkm convert pdf"
+    Then a pdfs/YYYY/MM/*.md note is created for it as for any born-digital PDF
+    And no entry is written to <store>/.zkm-state/zkm-pdf-skipped.jsonl for that file
+
+  @manual
+  Scenario: Non-empty-password PDF queues as encrypted-pending, no artifacts (id:1a30)
+    Given the source folder contains a PDF protected with a non-empty user password I do not supply
+    When I run "zkm convert pdf"
+    Then no markdown file, CAS object, or inbox symlink is created for it
+    And <store>/.zkm-state/zkm-pdf-skipped.jsonl gains one entry with reason "encrypted-pending"
+    And the command exits 0 and sibling valid PDFs in the same run are still imported
+
+  @manual
+  Scenario: Encrypted-pending PDF self-drains from its originating mail (id:1a30)
+    Given a prior run queued an inbox PDF as encrypted-pending
+    And zkm-eml later imports the mail that carried that PDF, whose body says "PDF password: hunter2"
+    When I run "zkm convert pdf" again
+    Then the previously-pending PDF is decrypted with that password and imported normally
+    And its encrypted-pending entry is not re-logged on subsequent runs

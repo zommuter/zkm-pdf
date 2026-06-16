@@ -5,9 +5,13 @@
 ## What it does
 
 - Scans `<store>/inbox/` for `.pdf` symlinks (deposited by `zkm-eml` or other plugins)
-- Optionally walks an external `PDF_SOURCE_DIR` for direct PDF imports
+- Optionally walks an external `source_dir` for direct PDF imports
 - Extracts text via `pypdf`; emits `pdfs/YYYY/MM/<date>_<slug>.md` per PDF
-- Silently skips scanned-only PDFs (no text layer) — leaves them for `zkm-scan`
+- Skips scanned-only PDFs (no text layer) — leaves them for `zkm-scan`; every skip is
+  logged with a `reason` to `<store>/.zkm-state/zkm-pdf-skipped.jsonl`
+- Handles encrypted PDFs: empty-user-password PDFs decrypt transparently; non-empty
+  ones queue as `encrypted-pending` and self-drain when the originating `.eml` carries
+  a plaintext password
 - SHA-256 dedup: second run on the same content produces zero new files
 - Merges a `pdf` producer into the existing CAS sidecar (multi-plugin provenance)
 
@@ -30,8 +34,8 @@ git clone https://github.com/zommuter/zkm-pdf.git plugins/zkm-pdf
 
 ```
 pdfs/YYYY/MM/<date>_<slug>.md
-originals/pdfs/_objects/<aa>/<rest>   # for PDF_SOURCE_DIR imports only
-inbox/pdfs/<name>.pdf                 # for PDF_SOURCE_DIR imports only
+originals/pdfs/_objects/<aa>/<rest>   # for source_dir imports only
+inbox/pdfs/<name>.pdf                 # for source_dir imports only
 <store>/.zkm-state/zkm-pdf-skipped.jsonl  # audit log of skipped PDFs
 ```
 
