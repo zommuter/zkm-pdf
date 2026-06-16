@@ -290,3 +290,29 @@ def test_eml_without_password_stays_pending(store):  # roadmap:1a30
     entries = read_skip_log(store)
     assert len(entries) == 1
     assert entries[0]["reason"] == "encrypted-pending"
+
+
+# ── id:1a30 (follow-up) — broaden the password token boundary ─────────────────
+# DECIDED 2026-06-16 (/relay human): a password may legitimately END in `!.,;:?`.
+# The current trailing-`.,;:!?` rstrip in _scan_passwords truncates such a
+# password (e.g. `Secret!` -> `Secret`), so a labelled password whose final
+# character is punctuation never decrypts. Broaden the token: delimit only on
+# whitespace / quotes / brackets; do not strip internal-or-final password
+# punctuation. (Trailing punctuation that is clearly a sentence ender directly
+# adjacent to nothing else is the only acceptable trim, and the labelled-only
+# bias means a stray decrypt try is harmless even if a sentence comma sneaks in.)
+def test_eml_password_with_trailing_punctuation_drains_queue(store):  # roadmap:1a30
+    """A labelled password whose final char is punctuation (e.g. `Secret!`)
+    must be recovered WHOLE and used to decrypt — not truncated to `Secret`."""
+    pdf_bytes = _encrypted_pdf_bytes(user_password="Secret!")
+    _deposit_inbox_pdf_from_eml(
+        store,
+        pdf_bytes,
+        eml_message="mail/messages/2024-01-01_invoice.md",
+        eml_body="Hi,\n\nThe PDF password is: Secret!\n\nRegards",
+    )
+    created = convert(store, cfg())
+    assert len(created) == 1, (
+        "trailing-punctuation password was truncated; the broadened token "
+        "boundary must keep `Secret!` whole so the queue drains"
+    )
