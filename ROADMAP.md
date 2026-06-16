@@ -125,6 +125,32 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     REVIEW_ME box (2026-06-13). Low expected volume — favour the simplest queue
     that works (a `reason` value + re-scan on next run), defer any store.
 
+- [ ] Broaden the eml password-token boundary so trailing punctuation isn't truncated [ROUTINE] <!-- id:1a30 -->
+  - **Origin**: reverse-handoff of the /relay human decision 2026-06-16 on the
+    id:1a30 REVIEW_ME box (parts a/b confirmed; part c — token boundary — needs a
+    code change). REUSES the existing id:1a30 token (single-id-two-views): the
+    HARD queue work shipped, this is the follow-up the human review surfaced.
+  - **Why ROUTINE**: a self-contained tweak to `_scan_passwords` /
+    `_PASSWORD_TOKEN_RE` in `src/zkm_pdf/convert.py` (~line 283/295) plus one
+    test — no new cross-source link, no config, no key store.
+  - **Problem**: `_scan_passwords` does `candidate.rstrip(".,;:!?")` (convert.py:295),
+    so a labelled password whose final character is one of those (e.g. `Secret!`)
+    is truncated to `Secret` and never decrypts. Mid-token punctuation already
+    survives (`SecurePass!123` is kept whole); only the *trailing* trim is the bug.
+  - **Acceptance**: a labelled password ending in punctuation (`Secret!`,
+    `pass.word`, `pin:1234?`) is recovered WHOLE and used as a decrypt key, so an
+    inbox encrypted PDF whose `.eml` carries such a password self-drains the
+    pending queue. Delimit the token only on whitespace / quotes / brackets
+    (`_PASSWORD_TOKEN_RE` already does this); drop or narrow the trailing
+    `rstrip(".,;:!?")` so legitimate final password punctuation is preserved.
+    Labelled-only bias (id:1a30 part a) means a rare over-greedy decrypt try is
+    harmless. Empty-user-password (id:58d7) and dedup (id:2abf) unchanged.
+  - **Done-check**: `tests/test_roadmap_specs.py::test_eml_password_with_trailing_punctuation_drains_queue`
+    (RED today, `# roadmap:1a30`) goes green; all other tests stay green.
+  - **Test**: red spec already in place —
+    `test_eml_password_with_trailing_punctuation_drains_queue` (uses
+    `_encrypted_pdf_bytes(user_password="Secret!")` + an `.eml` body `password is: Secret!`).
+
 - [ ] Calibrate or replace the min-text "scanned-only" heuristic [HARD — strong model] <!-- id:9475 -->
   - **Why HARD**: the 100-char default was an explicit provisional judgment
     ("revisit before Session 13") with no corpus evidence. Choosing the

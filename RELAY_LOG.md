@@ -34,3 +34,15 @@ relay(hard) zkm-pdf id:1a30: self-draining encrypted-pending queue + .eml plaint
 ## 2026-06-16 16:27 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 handoff zkm-pdf: C1 docs (relay pointer v2→v4, README de-stale PDF_SOURCE_DIR→source_dir + encrypted-queue), C2 TODO summary fix (1 open HARD id:9475 GATED, 0 ROUTINE), C4 BDD encrypted-PDF scenarios; C3/C5 no-op (no open ROUTINE, sole HARD gated)
+
+## 2026-06-16 19:57 — reviewer (claude-opus-4-8, relay-loop)
+
+review zkm-pdf: 1 commit (88d3c49 relay-human decision on REVIEW_ME id:1a30) audited
+clean — doc-only, gaming-scan clean, 24/24 pre-existing tests green. Reverse-handoff
+(§5b): the human decision confirmed parts (a) labelled-only bias and (b) EN+DE vocab,
+but part (c) token-boundary needs code → qualified as a [ROUTINE] follow-up REUSING
+id:1a30 (single-id-two-views): broaden `_scan_passwords` so a labelled password ending
+in `.,;:!?` (e.g. `Secret!`) isn't truncated by the trailing rstrip. Wrote red spec
+`test_eml_password_with_trailing_punctuation_drains_queue` (`# roadmap:1a30`, RED today,
+verified failing against current impl). TODO summary updated 1→2 open ROADMAP items.
+REVIEW_ME id:1a30 box stays OPEN (executor follow-up). routine_open=1.
