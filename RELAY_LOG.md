@@ -46,3 +46,7 @@ in `.,;:!?` (e.g. `Secret!`) isn't truncated by the trailing rstrip. Wrote red s
 `test_eml_password_with_trailing_punctuation_drains_queue` (`# roadmap:1a30`, RED today,
 verified failing against current impl). TODO summary updated 1→2 open ROADMAP items.
 REVIEW_ME id:1a30 box stays OPEN (executor follow-up). routine_open=1.
+
+## 2026-06-16 20:57 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: 88d3c49 (human decision id:1a30) audited clean, 24/24 green; reverse-handoff qualified id:1a30 token-broadening [ROUTINE] with red spec; routine_open=1
