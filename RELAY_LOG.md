@@ -30,3 +30,7 @@ review zkm-pdf: 1 commit (daf49df REVIEW_ME triage) audited clean, 20 tests gree
 ## 2026-06-15 18:07 — strong-execute (claude-opus-4-8, fable-standin, relay-loop)
 
 relay(hard) zkm-pdf id:1a30: self-draining encrypted-pending queue + .eml plaintext-password source; 24/24 green
+
+## 2026-06-16 16:27 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+handoff zkm-pdf: C1 docs (relay pointer v2→v4, README de-stale PDF_SOURCE_DIR→source_dir + encrypted-queue), C2 TODO summary fix (1 open HARD id:9475 GATED, 0 ROUTINE), C4 BDD encrypted-PDF scenarios; C3/C5 no-op (no open ROUTINE, sole HARD gated)
