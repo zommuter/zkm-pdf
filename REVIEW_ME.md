@@ -3,7 +3,7 @@
 Judgment calls encoded in red tests — confirm or correct the interpretation.
 Max ~10 open boxes; the reviewer prunes resolved ones each review turn.
 
-- [ ] **id:1a30 — eml password-scan heuristic.** The self-draining decryption
+- [x] **id:1a30 — eml password-scan heuristic.** verified 2026-06-17 (/relay human): trailing-punctuation rstrip removed from _scan_passwords (convert.py), red spec test_eml_password_with_trailing_punctuation_drains_queue now green; shipped e0e96cd/129ebc3 — stale box. The self-draining decryption
   queue recovers a PDF password from the originating `.eml` by matching a
   labelled token: `(pdf )?(password|passwort|kennwort|pin|code|passcode)
   (is|ist|lautet|:|=|->|→) <token>`, where `<token>` is the first run of
