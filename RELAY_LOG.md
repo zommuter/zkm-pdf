@@ -50,3 +50,7 @@ REVIEW_ME id:1a30 box stays OPEN (executor follow-up). routine_open=1.
 ## 2026-06-16 20:57 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: 88d3c49 (human decision id:1a30) audited clean, 24/24 green; reverse-handoff qualified id:1a30 token-broadening [ROUTINE] with red spec; routine_open=1
+
+## 2026-06-17 — executor (sonnet)
+
+Worked id:1a30 (trailing-punctuation follow-up) — dropped the `rstrip(".,;:!?")` from `_scan_passwords` in `convert.py` and updated the adjacent comment to reflect the broadened token boundary. The `_PASSWORD_TOKEN_RE` already delimits on whitespace/quotes/brackets, making the trailing strip redundant and harmful. 25/25 tests green. Friction: none — single-line fix, pre-written red spec drove it cleanly.
