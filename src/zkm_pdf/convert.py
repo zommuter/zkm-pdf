@@ -273,7 +273,8 @@ def _is_owned(cas_sidecar: Path) -> bool:
 # "code"); we deliberately do NOT guess unlabelled tokens — a false positive
 # would either fail to decrypt (harmless) or, worse, never (the queue just
 # stays pending). The chosen token is the first non-space run after the label,
-# trimmed of surrounding quotes/brackets and trailing sentence punctuation.
+# delimited only by whitespace, quotes, and brackets — no trailing-punctuation
+# strip (passwords legitimately end in `!`, `.`, etc.).
 # This heuristic is a judgment call — see REVIEW_ME.md.
 _PASSWORD_LABEL_RE = re.compile(
     r"(?:pdf[\s-]*)?(?:password|passwort|kennwort|pin|code|passcode)"
@@ -292,7 +293,7 @@ def _scan_passwords(text: str) -> list[str]:
         tok = _PASSWORD_TOKEN_RE.match(tail)
         if not tok:
             continue
-        candidate = tok.group(0).rstrip(".,;:!?")
+        candidate = tok.group(0)
         if candidate:
             found.append(candidate)
     return list(dict.fromkeys(found))

@@ -125,7 +125,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     REVIEW_ME box (2026-06-13). Low expected volume — favour the simplest queue
     that works (a `reason` value + re-scan on next run), defer any store.
 
-- [ ] Broaden the eml password-token boundary so trailing punctuation isn't truncated [ROUTINE] <!-- id:1a30 -->
+- [x] Broaden the eml password-token boundary so trailing punctuation isn't truncated [ROUTINE] <!-- id:1a30 -->
   - **Origin**: reverse-handoff of the /relay human decision 2026-06-16 on the
     id:1a30 REVIEW_ME box (parts a/b confirmed; part c — token boundary — needs a
     code change). REUSES the existing id:1a30 token (single-id-two-views): the
