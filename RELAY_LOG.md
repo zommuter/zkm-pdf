@@ -54,3 +54,7 @@ review zkm-pdf: 88d3c49 (human decision id:1a30) audited clean, 24/24 green; rev
 ## 2026-06-17 — executor (sonnet)
 
 Worked id:1a30 (trailing-punctuation follow-up) — dropped the `rstrip(".,;:!?")` from `_scan_passwords` in `convert.py` and updated the adjacent comment to reflect the broadened token boundary. The `_PASSWORD_TOKEN_RE` already delimits on whitespace/quotes/brackets, making the trailing strip redundant and harmful. 25/25 tests green. Friction: none — single-line fix, pre-written red spec drove it cleanly.
+
+## 2026-06-17 13:13 — executor (sonnet, relay-loop)
+
+fix(convert): drop trailing rstrip from _scan_passwords so passwords ending in punctuation (e.g. Secret!) are recovered whole and drain the encrypted-pending queue (id:1a30)
