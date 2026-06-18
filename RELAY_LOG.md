@@ -58,3 +58,18 @@ Worked id:1a30 (trailing-punctuation follow-up) — dropped the `rstrip(".,;:!?"
 ## 2026-06-17 13:13 — executor (sonnet, relay-loop)
 
 fix(convert): drop trailing rstrip from _scan_passwords so passwords ending in punctuation (e.g. Secret!) are recovered whole and drain the encrypted-pending queue (id:1a30)
+
+## 2026-06-18 10:48 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: window relay-ckpt-20260617-1313..HEAD = 1 commit (7868de1, doc-only —
+human ticked the id:1a30 REVIEW_ME box for already-shipped+checkpointed work; the
+trailing-rstrip fix e0e96cd/129ebc3 landed at the prior checkpoint). gaming-scan clean;
+no src/tests/pyproject changes this window so no resurrection test needed. Full suite
+25/25 green; the id:1a30 spec `test_eml_password_with_trailing_punctuation_drains_queue`
+confirmed genuinely green via real impl (rstrip removal), not a weakened assertion.
+Reverse-handoff (§5b): no new ledger items added this window. Spec-drift clean —
+CLAUDE.md pointer v4 == canonical v4, README/ARCHITECTURE already document the
+encrypted/eml-password feature. Pruned the resolved id:1a30 REVIEW_ME box (work fully
+closed: both ROADMAP entries [x], test green). Only open ROADMAP item is id:9475 [HARD]
+— explicitly GATED (real-corpus measurements + cross-repo zkm-scan coordination), not
+executor-ready. routine_open=0; verified_green=[1a30].
