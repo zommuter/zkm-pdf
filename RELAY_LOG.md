@@ -73,3 +73,7 @@ encrypted/eml-password feature. Pruned the resolved id:1a30 REVIEW_ME box (work 
 closed: both ROADMAP entries [x], test green). Only open ROADMAP item is id:9475 [HARD]
 — explicitly GATED (real-corpus measurements + cross-repo zkm-scan coordination), not
 executor-ready. routine_open=0; verified_green=[1a30].
+
+## 2026-06-18 10:58 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: 7868de1 audited clean (doc-only, 25/25 green, id:1a30 verified); pruned resolved REVIEW_ME box; TODO summary 2→1 open; only id:9475 [HARD] GATED remains; routine_open=0
