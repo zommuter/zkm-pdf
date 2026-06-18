@@ -77,3 +77,17 @@ executor-ready. routine_open=0; verified_green=[1a30].
 ## 2026-06-18 10:58 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: 7868de1 audited clean (doc-only, 25/25 green, id:1a30 verified); pruned resolved REVIEW_ME box; TODO summary 2→1 open; only id:9475 [HARD] GATED remains; routine_open=0
+
+## 2026-06-18 16:16 — reviewer (claude-opus-4-8[1m], fable-standin, relay-loop)
+
+review zkm-pdf: window relay-ckpt-20260618-1058..HEAD = 1 commit (ddcf065, ROADMAP-only —
+/meeting --cross gated-HARD triage annotated id:9475 as DECIDED+SUBSUMED into zkm-scan
+id:02bd: extract one `zkm.pdftext` core helper + shared `pdf_text_threshold`, pilot
+per-page density vs evidence-backed char-count default on the skip-log corpus; don't
+recalibrate in isolation = avoids cross-plugin drift). No src/tests/pyproject changes —
+gaming-scan clean, no resurrection/fixture checks needed. Reverse-handoff (§5b): no new
+open ledger items added this window (the commit only enriches existing id:9475 prose).
+Spec-drift clean — CLAUDE.md pointer v4 == canonical v4. Synced the TODO id:32fe tracking
+line to mirror the subsumption decision (single-id-two-views consistency). Only open
+ROADMAP item is id:9475 [HARD] — GATED under cross-repo id:02bd, not executor-ready.
+routine_open=0; verified_green=[]; gaming_flags=[]; reopened=[].
