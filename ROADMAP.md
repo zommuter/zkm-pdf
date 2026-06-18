@@ -152,6 +152,17 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     `_encrypted_pdf_bytes(user_password="Secret!")` + an `.eml` body `password is: Secret!`).
 
 - [ ] Calibrate or replace the min-text "scanned-only" heuristic [HARD — strong model] <!-- id:9475 -->
+  - **DECIDED 2026-06-18 (/meeting --cross gated-HARD triage) — SUBSUMED into zkm-scan id:02bd.**
+    Do NOT recalibrate this threshold in isolation (that reintroduces the cross-plugin drift bug
+    02bd exists to fix — today the two plugins compute the count differently, so a whitespace-heavy
+    PDF can be skipped by BOTH = processed by neither). Unified decision: extract ONE `zkm.pdftext`
+    core helper returning a canonical char count (use zkm-pdf's `.strip()`+skip-empty-pages
+    semantics, id:1055-reviewed), consumed by BOTH plugins via a single shared `pdf_text_threshold`
+    key → drift impossible by construction. **Discriminator: PILOT a per-page density / text-coverage
+    ratio (more robust on sparse many-page PDFs); fall back to the evidence-backed char-count default
+    if the pilot doesn't beat it on the skip-log corpus** (`zkm-pdf-skipped.jsonl`, id:2abf). Keep
+    zkm-scan's `min_text_chars=10` OCR-junk floor a SEPARATE key. Coordinated build under id:02bd.
+    See `dotclaude-skills/docs/meeting-notes/2026-06-18-1219-cross-gated-hard-triage.md`.
   - **Why HARD**: the 100-char default was an explicit provisional judgment
     ("revisit before Session 13") with no corpus evidence. Choosing the
     discriminator (chars-per-page density? text-coverage ratio? embedded-font
