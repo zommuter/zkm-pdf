@@ -91,3 +91,7 @@ Spec-drift clean — CLAUDE.md pointer v4 == canonical v4. Synced the TODO id:32
 line to mirror the subsumption decision (single-id-two-views consistency). Only open
 ROADMAP item is id:9475 [HARD] — GATED under cross-repo id:02bd, not executor-ready.
 routine_open=0; verified_green=[]; gaming_flags=[]; reopened=[].
+
+## 2026-06-18 16:53 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: audited ddcf065 (/meeting --cross subsumed id:9475 into zkm-scan id:02bd); gaming-scan clean, no code/test changes; synced TODO id:32fe; only id:9475 [HARD] GATED remains; routine_open=0
