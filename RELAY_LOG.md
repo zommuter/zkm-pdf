@@ -95,3 +95,7 @@ routine_open=0; verified_green=[]; gaming_flags=[]; reopened=[].
 ## 2026-06-18 16:53 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: audited ddcf065 (/meeting --cross subsumed id:9475 into zkm-scan id:02bd); gaming-scan clean, no code/test changes; synced TODO id:32fe; only id:9475 [HARD] GATED remains; routine_open=0
+
+## 2026-06-21 21:34 — reconcile (claude-opus-4-8)
+
+reconcile A/B: id:1a30 password-boundary — keep parked fix (strip .,;:? not !), regression test folded; main's e0e96cd missed mid-sentence trailing period; suite 26/26
