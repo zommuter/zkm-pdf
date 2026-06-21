@@ -316,3 +316,30 @@ def test_eml_password_with_trailing_punctuation_drains_queue(store):  # roadmap:
         "trailing-punctuation password was truncated; the broadened token "
         "boundary must keep `Secret!` whole so the queue drains"
     )
+
+
+def test_eml_password_with_internal_punctuation_is_recovered(store):  # roadmap:1a30
+    """Passwords containing internal punctuation (!, .) are recovered whole.
+
+    REVIEW_ME.md id:1a30 decision (c) 2026-06-16: broaden the token boundary —
+    delimit on whitespace/quotes/brackets only; strip trailing sentence punctuation
+    (.,;:?) but NOT trailing `!` so that passwords like `SecurePass!123` quoted
+    mid-prose (`password is: SecurePass!123.`) are recovered as `SecurePass!123`
+    — the sentence period is dropped but `!` stays mid-token, not truncated to
+    `SecurePass`. A bare "drop all trailing strip" approach would instead keep
+    the period (`SecurePass!123.`) and fail to decrypt.
+    """
+    password = "SecurePass!123"
+    pdf_bytes = _encrypted_pdf_bytes(user_password=password)
+    _deposit_inbox_pdf_from_eml(
+        store,
+        pdf_bytes,
+        eml_message="mail/messages/2024-01-01_invoice.md",
+        # Trailing period after the token (sentence context): must not eat into
+        # `SecurePass!123` — only the `.` is stripped, `!` stays mid-token.
+        eml_body=f"Hello,\n\nThe PDF password is: {password}.\n\nRegards",
+    )
+    created = convert(store, cfg())
+    assert len(created) == 1, (
+        f"password with internal punctuation ({password!r}) was not recovered whole"
+    )

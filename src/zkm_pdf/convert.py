@@ -273,8 +273,12 @@ def _is_owned(cas_sidecar: Path) -> bool:
 # "code"); we deliberately do NOT guess unlabelled tokens — a false positive
 # would either fail to decrypt (harmless) or, worse, never (the queue just
 # stays pending). The chosen token is the first non-space run after the label,
-# delimited only by whitespace, quotes, and brackets — no trailing-punctuation
-# strip (passwords legitimately end in `!`, `.`, etc.).
+# delimited by whitespace / quotes / brackets only — internal punctuation such
+# as `!`, `.`, `,` is allowed (a password like `SecurePass!123` must be
+# recovered whole). Only trailing SENTENCE punctuation (`.,;:?`) is stripped so
+# a password quoted mid-prose (`password is: SecurePass!123.`) drops the
+# sentence period; `!` is intentionally excluded from the strip set because it
+# can legitimately end a password (`Secret!`).
 # This heuristic is a judgment call — see REVIEW_ME.md.
 _PASSWORD_LABEL_RE = re.compile(
     r"(?:pdf[\s-]*)?(?:password|passwort|kennwort|pin|code|passcode)"
@@ -293,7 +297,9 @@ def _scan_passwords(text: str) -> list[str]:
         tok = _PASSWORD_TOKEN_RE.match(tail)
         if not tok:
             continue
-        candidate = tok.group(0)
+        # Strip only sentence-ender punctuation from the trailing position;
+        # `!` is intentionally kept (valid password character, even trailing).
+        candidate = tok.group(0).rstrip(".,;:?")
         if candidate:
             found.append(candidate)
     return list(dict.fromkeys(found))
