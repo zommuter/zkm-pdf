@@ -151,7 +151,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     `test_eml_password_with_trailing_punctuation_drains_queue` (uses
     `_encrypted_pdf_bytes(user_password="Secret!")` + an `.eml` body `password is: Secret!`).
 
-- [ ] Calibrate or replace the min-text "scanned-only" heuristic [HARD — strong model] <!-- id:9475 -->
+- [ ] Calibrate or replace the min-text "scanned-only" heuristic [HARD — meeting] <!-- id:9475 -->
   - **DECIDED 2026-06-18 (/meeting --cross gated-HARD triage) — SUBSUMED into zkm-scan id:02bd.**
     Do NOT recalibrate this threshold in isolation (that reintroduces the cross-plugin drift bug
     02bd exists to fix — today the two plugins compute the count differently, so a whitespace-heavy
