@@ -114,3 +114,7 @@ CLAUDE.md contract pointer v4 == canonical v4; no new commands/features so READM
 unaffected. Only open ROADMAP item is id:9475 [HARD — meeting] — DECIDED+SUBSUMED under
 cross-repo zkm-scan id:02bd, not executor-ready. routine_open=0; verified_green=[];
 gaming_flags=[]; reopened=[].
+
+## 2026-06-22 16:13 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf relay-ckpt-20260621-2134..HEAD: 2 trivial commits (lane-tag id:9475, uv.lock sync), CLEAN by vacuity, suite 26/26, routine_open=0
