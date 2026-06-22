@@ -99,3 +99,18 @@ review zkm-pdf: audited ddcf065 (/meeting --cross subsumed id:9475 into zkm-scan
 ## 2026-06-21 21:34 — reconcile (claude-opus-4-8)
 
 reconcile A/B: id:1a30 password-boundary — keep parked fix (strip .,;:? not !), regression test folded; main's e0e96cd missed mid-sentence trailing period; suite 26/26
+
+## 2026-06-22 16:01 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: window relay-ckpt-20260621-2134..HEAD = 2 commits — 141943c (relay(human)
+lane-tag migration id:9475 [HARD — strong model] → [HARD — meeting], id:78ff explicit-lane
+convention) and d094ed2 (chore: uv.lock zkm 0.14.0 → 0.15.0 sync to parent). No src/tests
+changes — gaming-scan clean; no resurrection/fixture/skip checks needed. Test suite 26/26
+green (run from main checkout — worktree's `zkm = {path="../.."}` editable dep can't resolve
+the relative path; diff has no code/test delta so green state is inherited from prior ckpt).
+Reverse-handoff (§5b): no new open ledger items — the only `+ - [ ]` line is the id:9475
+lane-tag rewrite of a pre-existing, already-qualified, decision-gated item. Spec-drift clean:
+CLAUDE.md contract pointer v4 == canonical v4; no new commands/features so README/ARCHITECTURE
+unaffected. Only open ROADMAP item is id:9475 [HARD — meeting] — DECIDED+SUBSUMED under
+cross-repo zkm-scan id:02bd, not executor-ready. routine_open=0; verified_green=[];
+gaming_flags=[]; reopened=[].
