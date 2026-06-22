@@ -118,3 +118,7 @@ gaming_flags=[]; reopened=[].
 ## 2026-06-22 16:13 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf relay-ckpt-20260621-2134..HEAD: 2 trivial commits (lane-tag id:9475, uv.lock sync), CLEAN by vacuity, suite 26/26, routine_open=0
+
+## 2026-06-22 21:26 — maintenance (manual, uv.lock cascade)
+
+uv.lock cascade refresh to zkm 0.16.0 — mechanical version-pin only (id:bae5), audit-exempt class (no code/spec change).
