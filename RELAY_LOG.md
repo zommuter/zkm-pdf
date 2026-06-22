@@ -99,3 +99,7 @@ review zkm-pdf: audited ddcf065 (/meeting --cross subsumed id:9475 into zkm-scan
 ## 2026-06-21 21:34 — reconcile (claude-opus-4-8)
 
 reconcile A/B: id:1a30 password-boundary — keep parked fix (strip .,;:? not !), regression test folded; main's e0e96cd missed mid-sentence trailing period; suite 26/26
+
+## 2026-06-22 15:36 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: audited 141943c (relay(human) lane-tag migration id:78ff) — doc-only, gaming-scan clean, no code/test changes; 26/26 tests green (main checkout; worktree-relative editable `zkm = ../..` dep can't resolve from the relay worktree path — known limitation, not a defect). Verified id:9475 retag `[HARD — strong model]`→`[HARD — meeting]` correct: item is DECIDED/SUBSUMED into zkm-scan id:02bd, needs a /meeting design decision not hands-on build (matches hard-lane-explicit grammar). Cross-ledger consistent (id:9475 open in both ROADMAP + TODO id:32fe); contract pointer v4 current. No ROADMAP changes; routine_open=0 (only open item is the gated [HARD — meeting] id:9475).
