@@ -125,3 +125,7 @@ uv.lock cascade refresh to zkm 0.16.0 — mechanical version-pin only (id:bae5),
 ## 2026-06-22 15:36 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: audited 141943c (relay(human) lane-tag migration id:78ff) — doc-only, gaming-scan clean, no code/test changes; 26/26 tests green (main checkout; worktree-relative editable `zkm = ../..` dep can't resolve from the relay worktree path — known limitation, not a defect). Verified id:9475 retag `[HARD — strong model]`→`[HARD — meeting]` correct: item is DECIDED/SUBSUMED into zkm-scan id:02bd, needs a /meeting design decision not hands-on build (matches hard-lane-explicit grammar). Cross-ledger consistent (id:9475 open in both ROADMAP + TODO id:32fe); contract pointer v4 current. No ROADMAP changes; routine_open=0 (only open item is the gated [HARD — meeting] id:9475).
+
+## 2026-06-23 15:38 — reconcile (human)
+
+reconcile integrate: relay(review): audit 141943c lane-tag migration (id:78ff) — clean, doc-only, 26/26 green
