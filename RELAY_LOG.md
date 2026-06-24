@@ -133,3 +133,7 @@ reconcile integrate: relay(review): audit 141943c lane-tag migration (id:78ff) �
 ## 2026-06-24 17:23 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: 130c305 9475 re-scope ([HARD — meeting]→[HARD — pool]) verified legit; reconciled TODO twin id:32fe single-id divergence; suite green (26), no gaming
+
+## 2026-06-24 21:01 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+Review zkm-pdf: id:cd59 (zkm.pdftext adoption) verified genuinely green + closed; id:8aa4 lane fixed to [HARD — meeting]; README drift fixed; 28 tests green
