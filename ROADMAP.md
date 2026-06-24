@@ -151,7 +151,9 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     `test_eml_password_with_trailing_punctuation_drains_queue` (uses
     `_encrypted_pdf_bytes(user_password="Secret!")` + an `.eml` body `password is: Secret!`).
 
-- [ ] Calibrate or replace the min-text "scanned-only" heuristic [HARD — meeting] <!-- id:9475 -->
+- [ ] Adopt the shared `zkm.pdftext` helper + run the density-ratio pilot (replaces the local min-text "scanned-only" heuristic) [HARD — pool] <!-- id:9475 -->
+  - **DECIDED** 2026-06-18 (D2, `dotclaude-skills/docs/meeting-notes/2026-06-18-1219-cross-gated-hard-triage.md`) + helper BUILT 2026-06-22 (`zkm/docs/meeting-notes/2026-06-22-1546-pdf-routing-unify-pdftext.md`, `zkm/src/zkm/pdftext.py`: `probe`/`is_scanned_only`/`resolve_threshold`). No longer needs a meeting — only the plugin-side ADOPTION never landed (zkm-pdf still uses its own heuristic; grep finds no `zkm.pdftext` import here).
+  - **Acceptance**: zkm-pdf routes scanned-only via `zkm.pdftext.is_scanned_only`/`resolve_threshold` (shared `pdf_text_threshold` key) instead of its local min-text rule; **pilot a per-page density/text-coverage ratio discriminator, fall back to the evidence-backed char-count default if the pilot doesn't beat it** (calibrate from `zkm-pdf-skipped.jsonl`). Old key → deprecated alias for one release. Coordinated with id:02bd (zkm-scan side). RED test pins the routing decision against a scanned vs text-PDF fixture.
   - **DECIDED 2026-06-18 (/meeting --cross gated-HARD triage) — SUBSUMED into zkm-scan id:02bd.**
     Do NOT recalibrate this threshold in isolation (that reintroduces the cross-plugin drift bug
     02bd exists to fix — today the two plugins compute the count differently, so a whitespace-heavy
