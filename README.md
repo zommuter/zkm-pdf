@@ -28,7 +28,8 @@ git clone https://github.com/zommuter/zkm-pdf.git plugins/zkm-pdf
 | Key | Default | Description |
 |---|---|---|
 | `source_dir` | *(empty)* | Optional external directory to scan recursively for `.pdf` files |
-| `min_text_chars` | `100` | Min extracted chars to emit md. Below this → silently skip (provisional heuristic) |
+| `pdf_text_threshold` | `100` | Min stripped extracted chars to treat a PDF as text-extractable; below this → scanned-only, logged to `zkm-pdf-skipped.jsonl`, left for zkm-scan. Shared with zkm-scan via `zkm.pdftext` (set once at the top level). |
+| `min_text_chars` | `100` | **Deprecated** alias for `pdf_text_threshold` (honoured one release when the canonical key is absent). Prefer `pdf_text_threshold`. |
 
 ## Output
 
