@@ -70,18 +70,28 @@ an md, so they are re-extracted — and re-logged — on every run. Fixing the
 re-log noise is ROADMAP id:2abf; the re-extraction cost is accepted until the
 per-CAS-object extraction cache lands (core `docs/object-storage.md`, Phase 3+).
 
-## The min-text heuristic (PROVISIONAL)
+## Routing contract (id:cd59, shared with zkm-scan)
 
-`min_text_chars` (default 100) decides "born-digital text PDF" vs
-"scanned-only → leave for zkm-scan". It was an explicit judgment call marked
-*revisit before Session 13* and is the weakest part of the design:
+```
+total_chars = Σ len(page.extract_text().strip()) over all pages
+              (None from extract_text() contributes 0)
 
-- The current count includes the `<!-- page N -->` marker overhead added by
-  `_extract_text`, so a many-page sparse PDF can pass on marker bytes alone
-  (ROADMAP id:1055 pins the text-only counting semantics).
-- The 100-char default is uncalibrated against a real corpus; replacing or
-  calibrating the heuristic (chars-per-page density, text-coverage ratio, ...)
-  is ROADMAP id:9475 [HARD].
+A PDF is scanned-only when total_chars < threshold (strict less-than).
+A PDF at exactly the threshold is NOT scanned-only.
+```
+
+This contract is owned by `zkm.pdftext` (`src/zkm/pdftext.py` in the parent
+repo) and consumed identically by both zkm-pdf and zkm-scan.  The authoritative
+`probe`/`is_scanned_only`/`resolve_threshold` trio lives there; plugins must not
+re-implement the measurement — import it to close the cross-plugin drift risk
+(id:9475/02bd).
+
+**Config key**: `pdf_text_threshold` (canonical, top-level, shared). The old
+`min_text_chars` key is a deprecated alias for one release (id:cd59): if only
+`min_text_chars` is set and `pdf_text_threshold` is absent, `convert()` promotes
+it before calling `resolve_threshold`. Set `pdf_text_threshold` in new configs.
+
+**Default**: 100 stripped characters (`zkm.pdftext.DEFAULT_TEXT_THRESHOLD`).
 
 Skips are silent on stdout but always appended to
 `<store>/.zkm-state/zkm-pdf-skipped.jsonl` (path, sha256, text_chars,

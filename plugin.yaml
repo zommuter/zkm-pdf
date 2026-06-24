@@ -19,11 +19,20 @@ config:
       Optional directory to scan recursively for PDF files (.pdf). Read-only.
       When empty, only PDFs already in the store inbox (deposited by zkm-eml
       or other plugins) are processed.
+  pdf_text_threshold:
+    required: false
+    default: 100
+    description: >
+      Minimum number of extracted characters required to classify a PDF as
+      text-extractable (as opposed to scanned-only). PDFs below this threshold
+      are logged to <store>/.zkm-state/zkm-pdf-skipped.jsonl and left for
+      zkm-scan to OCR. Uses the same semantics as zkm-scan (stripped per-page
+      character counts via zkm.pdftext) so both plugins agree on routing.
+      Shared with zkm-scan — set once at the top level to govern both plugins.
   min_text_chars:
     required: false
     default: 100
     description: >
-      Minimum number of extracted characters required to emit an md file.
-      PDFs below this threshold are silently skipped and logged to
-      <store>/.zkm-state/zkm-pdf-skipped.jsonl for later review.
-      NOTE: this char-count heuristic is provisional; revisit before Session 13.
+      DEPRECATED alias for pdf_text_threshold (id:cd59). Honoured for one
+      release when pdf_text_threshold is absent; prefer pdf_text_threshold in
+      new configs.

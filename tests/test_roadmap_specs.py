@@ -343,3 +343,77 @@ def test_eml_password_with_internal_punctuation_is_recovered(store):  # roadmap:
     assert len(created) == 1, (
         f"password with internal punctuation ({password!r}) was not recovered whole"
     )
+
+
+# ── id:cd59 — adopt shared zkm.pdftext helper for scanned-only routing ────────
+#
+# The cross-plugin drift risk (id:9475/02bd): zkm-pdf's local `min_text_chars`
+# comparison counted text differently than `zkm.pdftext.probe` (strip semantics).
+# This item wires zkm-pdf to the same shared oracle so both plugins can never
+# disagree on whether a PDF is scanned-only.
+#
+# Also: `pdf_text_threshold` becomes the canonical config key; `min_text_chars`
+# stays as a deprecated alias for one release.
+
+def test_cd59_routing_uses_shared_pdftext_helper(store, src):  # roadmap:cd59
+    """zkm-pdf's scanned-only routing must agree with the shared zkm.pdftext oracle.
+
+    Concretely: resolve_threshold must read `pdf_text_threshold` from the config
+    dict (canonical key); is_scanned_only must govern the skip decision; and the
+    verdict must match what zkm.pdftext.probe+is_scanned_only compute directly.
+
+    The discriminating case: set `pdf_text_threshold` to a value (10000) that
+    exceeds TEXT_ONLY's char count, with NO `min_text_chars` key. If convert()
+    still uses the shared pdftext.resolve_threshold, text_only.pdf will be
+    skipped (below_threshold). If convert() ignores `pdf_text_threshold` and
+    reads only `min_text_chars`, it uses the hardcoded default (100) instead
+    and imports text_only.pdf — proving the key isn't wired.
+    """
+    import pypdf
+
+    from zkm.pdftext import probe, is_scanned_only, resolve_threshold
+
+    # Verify fixture premise: TEXT_ONLY has fewer than 10000 stripped chars.
+    reader = pypdf.PdfReader(str(TEXT_ONLY))
+    oracle_probe = probe(reader)
+    high_threshold = 10000
+    oracle_scanned_only = is_scanned_only(oracle_probe, high_threshold)
+    assert oracle_scanned_only, (
+        f"fixture premise broken — text_only.pdf has {oracle_probe.total_chars} "
+        "stripped chars, expected < 10000 for this test"
+    )
+
+    shutil.copy(TEXT_ONLY, src / "text_only.pdf")
+    config_canonical = {
+        "source_dir": str(src),
+        "pdf_text_threshold": high_threshold,
+        # No `min_text_chars` key — the canonical key alone must govern the decision.
+    }
+    created = convert(store, config_canonical)
+    assert created == [], (
+        "pdf_text_threshold key was not used by convert(); text_only.pdf was "
+        "imported when it should be scanned-only at the high threshold. "
+        "Wire zkm.pdftext.resolve_threshold into convert()."
+    )
+    entries = read_skip_log(store)
+    assert len(entries) == 1
+    assert entries[0]["reason"] == "below_threshold"
+
+
+def test_cd59_min_text_chars_deprecated_alias(store, src):  # roadmap:cd59
+    """min_text_chars still works as a deprecated alias for one release.
+
+    When only `min_text_chars` is set (no `pdf_text_threshold`), the threshold
+    is honoured — existing configs keep working.
+    """
+    shutil.copy(IMAGE_ONLY, src / "image_only.pdf")
+    config_legacy = {
+        "source_dir": str(src),
+        "min_text_chars": 100,
+        # No `pdf_text_threshold` — legacy key must be the fallback.
+    }
+    created = convert(store, config_legacy)
+    assert created == [], "image_only.pdf should still be skipped via legacy min_text_chars key"
+    entries = read_skip_log(store)
+    assert len(entries) == 1
+    assert entries[0]["reason"] == "below_threshold"

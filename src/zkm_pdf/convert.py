@@ -36,6 +36,7 @@ from zkm.atomic import write_atomic
 from zkm.cas import write_object
 from zkm.hashing import sha256_file
 from zkm.inbox import build_canonical_index, symlink_with_sidecar
+from zkm.pdftext import resolve_threshold as _pdftext_resolve_threshold
 from zkm.sidecar import merge_producer, read_sidecar
 
 PLUGIN_NAME = "pdf"
@@ -59,7 +60,14 @@ def convert(store_path: Path, config: dict, *, progress=None) -> list[Path]:
     Returns a list of paths to newly created .md files.
     progress: optional callback(current, total, message).
     """
-    min_chars = int(config.get("min_text_chars", 100))
+    # id:cd59 — resolve threshold via the shared helper (single source of truth
+    # across plugins).  `pdf_text_threshold` is the canonical config key;
+    # `min_text_chars` is the deprecated alias for one release: if only the old
+    # key is present we promote it into the config view so resolve_threshold picks
+    # it up via its priority-1 top-level lookup.
+    if "pdf_text_threshold" not in config and "min_text_chars" in config:
+        config = dict(config, pdf_text_threshold=config["min_text_chars"])
+    min_chars = _pdftext_resolve_threshold(config)
     src_dir_raw = str(config.get("source_dir", "") or "")
 
     (store_path / "pdfs").mkdir(parents=True, exist_ok=True)

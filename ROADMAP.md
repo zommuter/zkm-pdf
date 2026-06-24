@@ -151,7 +151,7 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     `test_eml_password_with_trailing_punctuation_drains_queue` (uses
     `_encrypted_pdf_bytes(user_password="Secret!")` + an `.eml` body `password is: Secret!`).
 
-- [ ] Adopt the shared `zkm.pdftext` helper + run the density-ratio pilot (replaces the local min-text "scanned-only" heuristic) [HARD — pool] <!-- id:9475 -->
+- [ ] Adopt the shared `zkm.pdftext` helper + run the density-ratio pilot (replaces the local min-text "scanned-only" heuristic) [HARD — decision gate] — 🚧 GATED (auto, id:3801; route:hard-split): DECOMPOSED into seams id:cd59, id:8aa4 — pick those, not this. Pilot half is data-gated (no zkm-pdf-skipped.jsonl corpus exists yet); adoption half is doable now, mirrors shipped zkm-scan 02bd. <!-- id:9475 -->
   - **DECIDED** 2026-06-18 (D2, `dotclaude-skills/docs/meeting-notes/2026-06-18-1219-cross-gated-hard-triage.md`) + helper BUILT 2026-06-22 (`zkm/docs/meeting-notes/2026-06-22-1546-pdf-routing-unify-pdftext.md`, `zkm/src/zkm/pdftext.py`: `probe`/`is_scanned_only`/`resolve_threshold`). No longer needs a meeting — only the plugin-side ADOPTION never landed (zkm-pdf still uses its own heuristic; grep finds no `zkm.pdftext` import here).
   - **Acceptance**: zkm-pdf routes scanned-only via `zkm.pdftext.is_scanned_only`/`resolve_threshold` (shared `pdf_text_threshold` key) instead of its local min-text rule; **pilot a per-page density/text-coverage ratio discriminator, fall back to the evidence-backed char-count default if the pilot doesn't beat it** (calibrate from `zkm-pdf-skipped.jsonl`). Old key → deprecated alias for one release. Coordinated with id:02bd (zkm-scan side). RED test pins the routing decision against a scanned vs text-PDF fixture.
   - **DECIDED 2026-06-18 (/meeting --cross gated-HARD triage) — SUBSUMED into zkm-scan id:02bd.**
@@ -177,3 +177,5 @@ checkboxes; only the reviewer adds, removes, or re-scopes items.
     per-page-density heuristic behind the same config surface; plugin.yaml
     `NOTE: provisional` removed; `zkm-pdf-skipped.jsonl` false-skip rate
     reported. Coordinate with zkm-scan before changing the boundary.
+- [ ] **[ROUTINE]** Adopt shared zkm.pdftext helper for scanned-only routing + shared pdf_text_threshold key (min_text_chars deprecated alias one release); remove plugin.yaml provisional NOTE; ARCHITECTURE routing-contract note; RED test pins routing on scanned-vs-text fixture. Mirrors shipped zkm-scan id:02bd. — seam of id:9475 (auto, id:3801) <!-- id:cd59 -->
+- [ ] **[HARD — strong model]** Density-ratio pilot: per-page text-coverage discriminator calibrated from zkm-pdf-skipped.jsonl, report false-skip rate, fall back to char-count default if it does not beat it. GATED on the skip-log corpus existing (real runs must accumulate skip entries first); coordinate with zkm-scan id:02bd. — seam of id:9475 (auto, id:3801) <!-- id:8aa4 -->
