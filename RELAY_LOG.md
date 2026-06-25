@@ -137,3 +137,7 @@ review zkm-pdf: 130c305 9475 re-scope ([HARD — meeting]→[HARD — pool]) ver
 ## 2026-06-24 21:01 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 Review zkm-pdf: id:cd59 (zkm.pdftext adoption) verified genuinely green + closed; id:8aa4 lane fixed to [HARD — meeting]; README drift fixed; 28 tests green
+
+## 2026-06-25 14:35 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: 2 /relay-human ledger edits (close 9475 umbrella, tick parked-orphan REVIEW_ME) verified genuine; suite 28 green, gaming-scan/roadmap-lint/cross-ledger/relay-doctor all clean; no code changes; routine_open=0
