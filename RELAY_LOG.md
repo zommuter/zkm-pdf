@@ -141,3 +141,7 @@ Review zkm-pdf: id:cd59 (zkm.pdftext adoption) verified genuinely green + closed
 ## 2026-06-25 14:35 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: 2 /relay-human ledger edits (close 9475 umbrella, tick parked-orphan REVIEW_ME) verified genuine; suite 28 green, gaming-scan/roadmap-lint/cross-ledger/relay-doctor all clean; no code changes; routine_open=0
+
+## 2026-06-26 10:16 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: ledger-only window (TODO conformance prose relocation id:3441/c095); gaming-scan/roadmap-lint/todo-conformance clean; only open item id:8aa4 data-gated [HARD — meeting]; routine_open=0
