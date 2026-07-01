@@ -145,3 +145,7 @@ review zkm-pdf: 2 /relay-human ledger edits (close 9475 umbrella, tick parked-or
 ## 2026-06-26 10:16 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
 
 review zkm-pdf: ledger-only window (TODO conformance prose relocation id:3441/c095); gaming-scan/roadmap-lint/todo-conformance clean; only open item id:8aa4 data-gated [HARD — meeting]; routine_open=0
+
+## 2026-07-02 00:15 — reviewer (claude-fable-5, relay-loop)
+
+Fable recheck (genuine Fable 5) of idle window: 28/28 green rerun, gaming-scan+doctor clean, cd59/1a30 audits confirm genuine; contract pointer v4→v6; id:8aa4 still data-gated; routine_open=0 [id:cd59,1a30,8aa4]
