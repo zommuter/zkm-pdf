@@ -87,7 +87,7 @@ Bare snake_case keys in `<store>/zkm-config.yaml` under the plugin section
   Object-storage primitives (`zkm.atomic`, `zkm.cas`, `zkm.sidecar`, `zkm.inbox`,
   `zkm.hashing`) are imported from core — never reimplemented here.
 
-## Relay contract <!-- relay-executor contract v4 -->
+## Relay contract <!-- relay-executor contract v6 -->
 
 This repo is managed by a reviewer/executor relay. Load `/relay executor` before
 working on any item, then follow its rules exactly.
