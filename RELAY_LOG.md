@@ -157,3 +157,7 @@ review zkm-pdf: EMPTY window (HEAD==relay-ckpt-20260702-0015) — classifier mis
 ## 2026-07-02 12:38 — reviewer (claude-fable-5, relay-loop)
 
 review zkm-pdf: ledger-only window (apex defang of id:32fe, 6dcf642) — 28/28 green (main checkout; worktree editable-dep limitation known), gaming-scan/lint/cross-ledger clean, pointer v6 current; completed the defang with P4 lint-ok annotation (703fa25) + pruned resolved REVIEW_ME box (808b47b), doctor now 0 issues; id:8aa4 still data-gated [HARD — meeting]; routine_open=0 [id:32fe,8aa4]
+
+## 2026-07-02 16:56 — reviewer (claude-opus-4-8, fable-standin, relay-loop)
+
+review zkm-pdf: ledger-only window (checkpoint tag lags untagged ckpt commit c6511a9 → classifier misfire); 28/28 green, gaming-scan/lint/cross-ledger/doctor clean, pointer v6 current; only open id:8aa4 data-gated [HARD — meeting]; routine_open=0
