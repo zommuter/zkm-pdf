@@ -153,3 +153,7 @@ Fable recheck (genuine Fable 5) of idle window: 28/28 green rerun, gaming-scan+d
 ## 2026-07-02 08:49 — reviewer (claude-fable-5, relay-loop)
 
 review zkm-pdf: EMPTY window (HEAD==relay-ckpt-20260702-0015) — classifier misfire, 3rd path-override drop this run (already routed:0537/3715); 28/28 green, gaming-scan/lint/cross-ledger/doctor clean, pointer v6 current; only open item id:8aa4 data-gated [HARD — meeting]; routine_open=0
+
+## 2026-07-02 12:38 — reviewer (claude-fable-5, relay-loop)
+
+review zkm-pdf: ledger-only window (apex defang of id:32fe, 6dcf642) — 28/28 green (main checkout; worktree editable-dep limitation known), gaming-scan/lint/cross-ledger clean, pointer v6 current; completed the defang with P4 lint-ok annotation (703fa25) + pruned resolved REVIEW_ME box (808b47b), doctor now 0 issues; id:8aa4 still data-gated [HARD — meeting]; routine_open=0 [id:32fe,8aa4]
